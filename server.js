@@ -24,9 +24,12 @@ mongoose.connect("mongodb+srv://bdx:123456789%40@cluster0.xmmbfgf.mongodb.net/ql
 // Schema và Model cho người dùng
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
+    fullName: { type: String }, // 👈 thêm trường họ và tên
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
-    password: { type: String, required: true }
+    password: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
 });
 
 const User = mongoose.model("User", userSchema);
@@ -66,13 +69,16 @@ app.post("/register", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Tạo user mới
-        const newUser = new User({
-            username,
-            email,
-            phone,
-            password: hashedPassword,
-            createdAt: new Date()
-        });
+    const newUser = new User({
+    username,
+    fullName, // 👈 nhớ gửi từ Android qua
+    email,
+    phone,
+    password: hashedPassword,
+    createdAt: new Date(),
+    updatedAt: new Date()
+});
+
 
         await newUser.save();
 
@@ -132,6 +138,7 @@ app.post("/login", async (req, res) => {
 app.listen(5000, () => {
     console.log("Server running on http://localhost:5000");
 });
+
 
 
 
