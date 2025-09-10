@@ -13,10 +13,13 @@ app.use(cors());
 const JWT_SECRET = "secret123";
 
 // Kết nối MongoDB
-mongoose.connect("ngodb+srv://bdx:123456789%40@cluster0.xmmbfgf.mongodb.net/qlsukien?retryWrites=true&w=majority&appName=Cluster0"; ", {
+mongoose.connect(
+  "mongodb+srv://bdx:123456789%40@cluster0.xmmbfgf.mongodb.net/qlsukien?retryWrites=true&w=majority&appName=Cluster0",
+  {
     useNewUrlParser: true,
     useUnifiedTopology: true
-}).then(() => console.log("✅ Kết nối MongoDB thành công"))
+  }
+).then(() => console.log("✅ Kết nối MongoDB thành công"))
     .catch(err => console.log("❌ Lỗi kết nối MongoDB:", err));
 
 // Schema người dùng
@@ -104,3 +107,4 @@ app.get("/api/users", async (req, res) => {
 // Chạy server
 const PORT = 3000;
 app.listen(PORT, () => console.log(`🚀 Server chạy ở http://localhost:${PORT}`));
+
