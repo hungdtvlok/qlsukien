@@ -32,8 +32,9 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("User", userSchema);
 
 // API đăng ký
+// API đăng ký
 app.post("/register", async (req, res) => {
-    const { username, email, phone, password } = req.body;
+    const { username, email, phone, password } = req.body; // ❌ bỏ confirmPassword
 
     if (!username || !email || !phone || !password) {
         return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin." });
@@ -62,14 +63,13 @@ app.post("/register", async (req, res) => {
         const newUser = new User({ username, email, phone, password: hashedPassword });
         await newUser.save();
 
-        const token = jwt.sign({ id: newUser._id }, JWT_SECRET, { expiresIn: "7d" });
-
-        return res.status(201).json({ message: "Đăng ký thành công!", token });
+        return res.status(201).json({ message: "Đăng ký thành công!" });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: "Lỗi server." });
     }
 });
+
 
 // API đăng nhập
 app.post("/login", async (req, res) => {
@@ -118,5 +118,6 @@ app.post("/login", async (req, res) => {
 app.listen(5000, () => {
     console.log("Server running on http://localhost:5000");
 });
+
 
 
