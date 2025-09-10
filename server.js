@@ -1,3 +1,10 @@
+// Thêm ở đầu file, sau các import khác
+const multer = require("multer");
+
+// Khởi tạo multer lưu trữ vào bộ nhớ (MemoryStorage)
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
 // server.js
 const express = require("express");
 const mongoose = require("mongoose");
@@ -242,6 +249,7 @@ app.post("/api/updateAvatar", upload.single("avatarFile"), async (req, res) => {
 app.listen(5000, () => {
     console.log("Server running on http://localhost:5000");
 });
+
 
 
 
