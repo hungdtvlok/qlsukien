@@ -33,16 +33,10 @@ const User = mongoose.model("User", userSchema);
 
 // API đăng ký
 app.post("/register", async (req, res) => {
-    const { username, email, phone, password, confirmPassword } = req.body;
+    const { username, email, phone, password } = req.body;
 
-    // Kiểm tra đầy đủ thông tin
-    if (!username || !email || !phone || !password || !confirmPassword) {
+    if (!username || !email || !phone || !password) {
         return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin." });
-    }
-
-    // Kiểm tra mật khẩu xác nhận
-    if (password !== confirmPassword) {
-        return res.status(400).json({ message: "Mật khẩu không khớp." });
     }
 
     // Validate email
@@ -58,35 +52,25 @@ app.post("/register", async (req, res) => {
     }
 
     try {
-        // Kiểm tra username hoặc email đã tồn tại chưa
         const existingUser = await User.findOne({ $or: [{ username }, { email }] });
         if (existingUser) {
             return res.status(400).json({ message: "Tên đăng nhập hoặc email đã tồn tại." });
         }
 
-        // Hash mật khẩu
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Tạo user mới
-        const newUser = new User({
-            username,
-            email,
-            phone,
-            password: hashedPassword
-        });
-
+        const newUser = new User({ username, email, phone, password: hashedPassword });
         await newUser.save();
 
-        // Tạo JWT token (nếu muốn)
         const token = jwt.sign({ id: newUser._id }, JWT_SECRET, { expiresIn: "7d" });
 
         return res.status(201).json({ message: "Đăng ký thành công!", token });
-
     } catch (err) {
         console.error(err);
         return res.status(500).json({ message: "Lỗi server." });
     }
 });
+
 // API đăng nhập
 app.post("/login", async (req, res) => {
     const { username, password } = req.body;
@@ -134,4 +118,5 @@ app.post("/login", async (req, res) => {
 app.listen(5000, () => {
     console.log("Server running on http://localhost:5000");
 });
+
 
