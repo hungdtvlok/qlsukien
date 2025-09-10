@@ -205,8 +205,7 @@ app.put("/api/changePassword", async (req, res) => {
         res.status(500).json({ message: "Lỗi server." });
     }
 });
-const multer = require("multer");
-const upload = multer({ storage: multer.memoryStorage() }); // lưu tạm trong bộ nhớ
+
 
 app.post("/api/updateAvatar", upload.single("avatarFile"), async (req, res) => {
     try {
@@ -243,6 +242,7 @@ app.post("/api/updateAvatar", upload.single("avatarFile"), async (req, res) => {
 app.listen(5000, () => {
     console.log("Server running on http://localhost:5000");
 });
+
 
 
 
