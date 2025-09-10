@@ -38,10 +38,10 @@ const User = mongoose.model("User", userSchema);
 // API đăng ký
 app.post("/register", async (req, res) => {
     try {
-        const { username, email, phone, password } = req.body;
+        const { username, fullName, email, phone, password } = req.body;
 
         // Kiểm tra dữ liệu đầu vào
-        if (!username || !email || !phone || !password) {
+        if (!username || !fullName || !email || !phone || !password) {
             return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin." });
         }
 
@@ -138,6 +138,7 @@ app.post("/login", async (req, res) => {
 app.listen(5000, () => {
     console.log("Server running on http://localhost:5000");
 });
+
 
 
 
