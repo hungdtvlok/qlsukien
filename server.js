@@ -141,12 +141,77 @@ app.get("/nhanvien", async (req, res) => {
         res.status(500).json({ message: "Lỗi server" });
     }
 });
+// API cập nhật thông tin nhân viên
+app.put("/api/updateNhanVien", async (req, res) => {
+    try {
+        const { username, fullName, email, phone } = req.body;
+
+        if (!username) {
+            return res.status(400).json({ message: "Thiếu username." });
+        }
+
+        // Cập nhật thông tin, đồng thời set updatedAt
+        const updatedUser = await User.findOneAndUpdate(
+            { username },
+            {
+                fullName,
+                email,
+                phone,
+                updatedAt: new Date()
+            },
+            { new: true } // trả về bản ghi đã update
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "Nhân viên không tồn tại." });
+        }
+
+        res.json({ message: "Cập nhật thông tin thành công!", user: updatedUser });
+
+    } catch (err) {
+        console.error("❌ Lỗi /api/updateNhanVien:", err);
+        res.status(500).json({ message: "Lỗi server." });
+    }
+});
+// API đổi mật khẩu
+app.put("/api/changePassword", async (req, res) => {
+    try {
+        const { username, newPassword } = req.body;
+
+        if (!username || !newPassword) {
+            return res.status(400).json({ message: "Thiếu username hoặc mật khẩu mới." });
+        }
+
+        // Mã hóa mật khẩu mới
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        const updatedUser = await User.findOneAndUpdate(
+            { username },
+            {
+                password: hashedPassword,
+                updatedAt: new Date()
+            },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "Nhân viên không tồn tại." });
+        }
+
+        res.json({ message: "Đổi mật khẩu thành công!" });
+
+    } catch (err) {
+        console.error("❌ Lỗi /api/changePassword:", err);
+        res.status(500).json({ message: "Lỗi server." });
+    }
+});
 
 
 // Server chạy trên port 5000
 app.listen(5000, () => {
     console.log("Server running on http://localhost:5000");
 });
+
 
 
 
