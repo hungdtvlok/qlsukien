@@ -132,12 +132,22 @@ app.post("/login", async (req, res) => {
         return res.status(500).json({ message: "Lỗi server." });
     }
 });
+//thông tin nhân viên
+app.get("/nhanvien", async (req, res) => {
+    try {
+        const nhanvien = await User.find(); // hoặc NhanVien.find()
+        res.json(nhanvien);
+    } catch (err) {
+        res.status(500).json({ message: "Lỗi server" });
+    }
+});
 
 
 // Server chạy trên port 5000
 app.listen(5000, () => {
     console.log("Server running on http://localhost:5000");
 });
+
 
 
 
