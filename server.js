@@ -31,44 +31,58 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
-// API đăng ký
+
 // API đăng ký
 app.post("/register", async (req, res) => {
-    const { username, email, phone, password } = req.body; // ❌ bỏ confirmPassword
-
-    if (!username || !email || !phone || !password) {
-        return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin." });
-    }
-
-    // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        return res.status(400).json({ message: "Email không hợp lệ." });
-    }
-
-    // Validate phone
-    const phoneRegex = /^[0-9]{9,12}$/;
-    if (!phoneRegex.test(phone)) {
-        return res.status(400).json({ message: "Số điện thoại không hợp lệ." });
-    }
-
     try {
-        const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+        const { username, email, phone, password } = req.body;
+
+        // Kiểm tra dữ liệu đầu vào
+        if (!username || !email || !phone || !password) {
+            return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin." });
+        }
+
+        // Validate email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ message: "Email không hợp lệ." });
+        }
+
+        // Validate số điện thoại (9–12 số)
+        const phoneRegex = /^[0-9]{9,12}$/;
+        if (!phoneRegex.test(phone)) {
+            return res.status(400).json({ message: "Số điện thoại không hợp lệ." });
+        }
+
+        // Kiểm tra tài khoản hoặc email đã tồn tại
+        const existingUser = await User.findOne({ 
+            $or: [{ username }, { email }] 
+        });
         if (existingUser) {
             return res.status(400).json({ message: "Tên đăng nhập hoặc email đã tồn tại." });
         }
 
+        // Mã hoá mật khẩu
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const newUser = new User({ username, email, phone, password: hashedPassword });
+        // Tạo user mới
+        const newUser = new User({
+            username,
+            email,
+            phone,
+            password: hashedPassword,
+            createdAt: new Date()
+        });
+
         await newUser.save();
 
         return res.status(201).json({ message: "Đăng ký thành công!" });
     } catch (err) {
-        console.error(err);
+        console.error("❌ Lỗi /register:", err);
         return res.status(500).json({ message: "Lỗi server." });
     }
 });
+
 
 
 // API đăng nhập
@@ -118,6 +132,7 @@ app.post("/login", async (req, res) => {
 app.listen(5000, () => {
     console.log("Server running on http://localhost:5000");
 });
+
 
 
 
