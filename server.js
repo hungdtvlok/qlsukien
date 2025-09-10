@@ -87,8 +87,51 @@ app.post("/register", async (req, res) => {
         return res.status(500).json({ message: "Lỗi server." });
     }
 });
+// API đăng nhập
+app.post("/login", async (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin." });
+    }
+
+    try {
+        // Tìm user theo username
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(400).json({ message: "Tài khoản không tồn tại." });
+        }
+
+        // So sánh mật khẩu
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({ message: "Sai mật khẩu." });
+        }
+
+        // Tạo JWT token
+        const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
+
+        return res.json({
+            success: true,
+            message: "Đăng nhập thành công!",
+            token,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                phone: user.phone
+            }
+        });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Lỗi server." });
+    }
+});
+
 
 // Server chạy trên port 5000
 app.listen(5000, () => {
     console.log("Server running on http://localhost:5000");
 });
+
