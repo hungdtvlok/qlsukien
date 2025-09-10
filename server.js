@@ -205,12 +205,45 @@ app.put("/api/changePassword", async (req, res) => {
         res.status(500).json({ message: "Lỗi server." });
     }
 });
+const multer = require("multer");
+const upload = multer({ storage: multer.memoryStorage() }); // lưu tạm trong bộ nhớ
+
+app.post("/api/updateAvatar", upload.single("avatarFile"), async (req, res) => {
+    try {
+        const { username } = req.body;
+        const file = req.file;
+
+        if (!username || !file) {
+            return res.status(400).json({ message: "Thiếu username hoặc file." });
+        }
+
+        // Chuyển file thành base64
+        const avatarBase64 = file.buffer.toString("base64");
+
+        const updatedUser = await User.findOneAndUpdate(
+            { username },
+            { avatar: avatarBase64, updatedAt: new Date() },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: "Nhân viên không tồn tại." });
+        }
+
+        res.json({ message: "Cập nhật avatar thành công!", avatar: updatedUser.avatar });
+
+    } catch (err) {
+        console.error("❌ Lỗi /api/updateAvatar:", err);
+        res.status(500).json({ message: "Lỗi server." });
+    }
+});
 
 
 // Server chạy trên port 5000
 app.listen(5000, () => {
     console.log("Server running on http://localhost:5000");
 });
+
 
 
 
