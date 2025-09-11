@@ -196,12 +196,32 @@ app.post("/api/changePassword", async (req, res) => {
         res.status(500).json({ message: "Server error: " + err.message });
     }
 });
+// ================== ảnh ==================
+app.post("/api/updateAvatar", async (req, res) => {
+    try {
+        const { username, avatar } = req.body;
+        if (!username || !avatar) return res.status(400).json({ message: "Thiếu thông tin avatar" });
+
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
+
+        user.avatar = avatar; // cần thêm field avatar vào schema
+        user.updatedAt = new Date();
+        await user.save();
+
+        res.json({ message: "Cập nhật avatar thành công" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error: " + err.message });
+    }
+});
 
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
