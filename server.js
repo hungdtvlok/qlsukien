@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("User", userSchema);
 
 // ================== API REGISTER ==================
-app.post("api/register", async (req, res) => {
+app.post("/api/register", async (req, res) => {
     try {
         const { username, fullName, email, phone, password } = req.body;
 
@@ -89,4 +89,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
