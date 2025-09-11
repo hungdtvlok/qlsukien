@@ -60,26 +60,22 @@ app.post("/api/check-username", async (req, res) => {
 // ================== API REGISTER ==================
 app.post("/api/register", async (req, res) => {
     try {
-        const body = req.body;
-        console.log("Body received:", body); // Debug dữ liệu từ client
+        console.log("Body received:", req.body); // log JSON Android gửi
+        const { username, fullName, email, phone, password } = req.body;
 
-        const username = body.username?.trim();
-        const fullName = body.fullName?.trim() || "";
-        const email = body.email?.trim() || "";
-        const phone = body.phone?.trim() || "";
-        const password = body.password;
-
+        // Kiểm tra dữ liệu bắt buộc
         if (!username || !password || !email || !phone) {
             return res.status(400).json({ message: "Thông tin đăng ký không hợp lệ" });
         }
 
-        // Kiểm tra username đã tồn tại chưa
-        const existingUser = await User.findOne({ username });
+        // Kiểm tra trùng username/email
+        const existingUser = await User.findOne({ $or: [{ username }, { email }] });
         if (existingUser) {
-            return res.status(400).json({ message: "Username đã tồn tại" });
+            const field = existingUser.username === username ? "Username" : "Email";
+            return res.status(400).json({ message: `${field} đã tồn tại` });
         }
 
-        // Hash password trước khi lưu
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Tạo user mới
@@ -91,16 +87,25 @@ app.post("/api/register", async (req, res) => {
             password: hashedPassword
         });
 
-        // Lưu user vào MongoDB
+        // Lưu vào MongoDB
         await newUser.save();
 
         res.status(201).json({ message: "Đăng ký thành công" });
 
     } catch (err) {
         console.error("❌ Lỗi đăng ký:", err);
+
+        // Nếu lỗi duplicate key
+        if (err.code === 11000) {
+            const field = Object.keys(err.keyValue)[0];
+            return res.status(400).json({ message: `${field} đã tồn tại` });
+        }
+
+        // Lỗi khác
         res.status(500).json({ message: "Server error: " + err.message });
     }
 });
+
 
 // ================== API LOGIN ==================
 app.post("/api/login", async (req, res) => {
@@ -140,3 +145,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
