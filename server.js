@@ -123,12 +123,33 @@ app.post("/api/login", async (req, res) => {
         res.status(500).json({ message: "Server error: " + err.message });
     }
 });
+// ================== API LẤY NHÂN VIÊN ==================
+app.get("/api/nhanvien", async (req, res) => {
+    try {
+        const { username } = req.query; // Lấy username từ query param
+        let users;
+
+        if (username) {
+            // Nếu có username, chỉ trả về user đó
+            users = await User.find({ username });
+        } else {
+            // Nếu không có username, trả về tất cả user
+            users = await User.find();
+        }
+
+        res.json(users);
+    } catch (err) {
+        console.error("❌ Lỗi lấy nhân viên:", err);
+        res.status(500).json({ message: "Server error: " + err.message });
+    }
+});
 
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
