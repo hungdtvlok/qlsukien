@@ -144,11 +144,65 @@ app.get("/api/nhanvien", async (req, res) => {
     }
 });
 
+// ================== API SỬA THÔNG TIN NHÂN VIÊN ==================
+app.post("/api/updateNhanVien", async (req, res) => {
+    try {
+        const { username, fullName, email, phone } = req.body;
+
+        if (!username || !fullName || !email || !phone) {
+            return res.status(400).json({ message: "Thiếu thông tin cập nhật" });
+        }
+
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
+
+        // Kiểm tra email trùng (nếu đổi)
+        const emailExists = await User.findOne({ email, username: { $ne: username } });
+        if (emailExists) return res.status(400).json({ message: "Email đã tồn tại" });
+
+        user.fullName = fullName;
+        user.email = email;
+        user.phone = phone;
+        user.updatedAt = new Date();
+
+        await user.save();
+        res.json({ message: "Cập nhật thông tin thành công" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error: " + err.message });
+    }
+});
+
+// ================== API ĐỔI MẬT KHẨU ==================
+app.post("/api/changePassword", async (req, res) => {
+    try {
+        const { username, newPassword } = req.body;
+
+        if (!username || !newPassword) return res.status(400).json({ message: "Thiếu thông tin đổi mật khẩu" });
+
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        user.updatedAt = new Date();
+
+        await user.save();
+        res.json({ message: "Đổi mật khẩu thành công" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error: " + err.message });
+    }
+});
+
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
