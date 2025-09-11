@@ -41,6 +41,27 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model("User", userSchema);
 
+// API kiểm tra username có tồn tại chưa
+app.post("/api/check-username", async (req, res) => {
+    try {
+        const { username } = req.body;
+
+        if (!username) {
+            return res.status(400).json({ message: "Username không hợp lệ" });
+        }
+
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.json({ exists: true, message: "Username đã tồn tại" });
+        } else {
+            return res.json({ exists: false, message: "Username hợp lệ" });
+        }
+    } catch (err) {
+        console.error("❌ Lỗi check username:", err);
+        res.status(500).json({ message: "Server error" });
+    }
+})
+
 // ================== API REGISTER ==================
 app.post("/api/register", async (req, res) => {
     try {
@@ -114,4 +135,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
