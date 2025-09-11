@@ -33,10 +33,11 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     password: { type: String, required: true },
-    avatar: { type: String, default: "" }
+    avatar: { type: String, default: "" }, // thêm avatar
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });
+
 
 const User = mongoose.model("User", userSchema);
 
@@ -222,6 +223,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
