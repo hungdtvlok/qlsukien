@@ -46,16 +46,21 @@ app.post("/api/register", async (req, res) => {
     try {
         const { username, fullName, email, phone, password } = req.body;
 
-        // Kiểm tra username hoặc email đã tồn tại chưa
-        const existingUser = await User.findOne({ $or: [{ username }, { email }] });
-        if (existingUser) {
-            return res.status(400).json({ message: "Username hoặc Email đã tồn tại" });
+        // 🔹 Kiểm tra request body có đủ thông tin
+        if (!username || !password) {
+            return res.status(400).json({ message: "Username hoặc mật khẩu không hợp lệ" });
         }
 
-        // Hash password trước khi lưu
+        // 🔹 Chỉ kiểm tra username đã tồn tại chưa
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(400).json({ message: "Username đã tồn tại" });
+        }
+
+        // 🔹 Hash password trước khi lưu
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Tạo user mới
+        // 🔹 Tạo user mới
         const newUser = new User({
             username,
             fullName,
@@ -64,14 +69,17 @@ app.post("/api/register", async (req, res) => {
             password: hashedPassword
         });
 
-        await newUser.save(); // Lưu vào DB
+        // 🔹 Lưu vào MongoDB
+        await newUser.save();
 
         res.status(201).json({ message: "Đăng ký thành công" });
+
     } catch (err) {
         console.error("❌ Lỗi đăng ký:", err);
         res.status(500).json({ message: "Server error" });
     }
 });
+
 
 // ================== API LOGIN ==================
 app.post("/api/login", async (req, res) => {
@@ -106,3 +114,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
