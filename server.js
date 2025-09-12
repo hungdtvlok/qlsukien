@@ -201,7 +201,7 @@ app.post("/api/changePassword", async (req, res) => {
 // ================== ảnh ==================
 app.post("/api/updateAvatar", async (req, res) => {
     try {
-        console.log("Body nhận từ client:", req.body);  // <-- thêm log này
+        console.log("Body nhận từ client:", req.body);
 
         const { username, avatar } = req.body;
         if (!username || !avatar) {
@@ -213,9 +213,13 @@ app.post("/api/updateAvatar", async (req, res) => {
             return res.status(404).json({ message: "Người dùng không tồn tại" });
         }
 
-        user.avatar = avatar; // Lưu chuỗi base64
+        console.log("Avatar nhận từ client (50 ký tự đầu):", avatar.substring(0, 50));
+
+        user.avatar = avatar;
         user.updatedAt = new Date();
         await user.save();
+
+        console.log("User sau khi cập nhật:", user);
 
         res.json({ message: "Cập nhật avatar thành công", avatar: user.avatar });
     } catch (err) {
@@ -226,11 +230,13 @@ app.post("/api/updateAvatar", async (req, res) => {
 
 
 
+
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
