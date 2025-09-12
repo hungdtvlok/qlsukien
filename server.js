@@ -228,7 +228,46 @@ app.post("/api/updateAvatar", async (req, res) => {
     }
 });
 
+// ================= sự kiện =================
 
+// Lấy tất cả sự kiện
+app.get("/api/events", async (req, res) => {
+    const events = await Event.find().sort({ createdAt: -1 });
+    res.json(events);
+});
+
+// Tạo sự kiện
+app.post("/api/events", async (req, res) => {
+    try {
+        const { name, time, location, description } = req.body;
+        const event = new Event({ name, time, location, description });
+        await event.save();
+        res.json({ message: "Tạo sự kiện thành công", event });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Sửa sự kiện
+app.put("/api/events/:id", async (req, res) => {
+    try {
+        const { name, time, location, description } = req.body;
+        const event = await Event.findByIdAndUpdate(req.params.id, { name, time, location, description }, { new: true });
+        res.json({ message: "Cập nhật sự kiện thành công", event });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Xóa sự kiện
+app.delete("/api/events/:id", async (req, res) => {
+    try {
+        await Event.findByIdAndDelete(req.params.id);
+        res.json({ message: "Xóa sự kiện thành công" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
 
 
 // ================== START SERVER ==================
@@ -236,6 +275,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
