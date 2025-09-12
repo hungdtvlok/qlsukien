@@ -36,6 +36,7 @@ const userSchema = new mongoose.Schema({
     avatar: { type: String, default: "" }, // thêm avatar
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
+    sole: { type: String, default: "User" }
 });
 
 
@@ -46,8 +47,8 @@ const User = mongoose.model("User", userSchema);
 // ================== API REGISTER ==================
 app.post("/api/register", async (req, res) => {
     try {
-        console.log("Body received:", req.body); // log JSON Android gửi
-        const { username, fullName, email, phone, password } = req.body;
+        console.log("Body received:", req.body);
+        const { username, fullName, email, phone, password, sole } = req.body; // lấy thêm sole từ client nếu có
 
         // Kiểm tra dữ liệu bắt buộc
         if (!username || !password || !email || !phone) {
@@ -64,13 +65,14 @@ app.post("/api/register", async (req, res) => {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Tạo user mới
+        // Tạo user mới với sole mặc định là "User" nếu client không gửi
         const newUser = new User({
             username,
             fullName,
             email,
             phone,
-            password: hashedPassword
+            password: hashedPassword,
+            sole: sole || "User"
         });
 
         // Lưu vào MongoDB
@@ -81,16 +83,15 @@ app.post("/api/register", async (req, res) => {
     } catch (err) {
         console.error("❌ Lỗi đăng ký:", err);
 
-        // Nếu lỗi duplicate key
         if (err.code === 11000) {
             const field = Object.keys(err.keyValue)[0];
             return res.status(400).json({ message: `${field} đã tồn tại` });
         }
 
-        // Lỗi khác
         res.status(500).json({ message: "Server error: " + err.message });
     }
 });
+
 
 
 // ================== API LOGIN ==================
@@ -275,6 +276,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
