@@ -39,10 +39,11 @@ const userSchema = new mongoose.Schema({
     sole: { type: String, default: "User" }
 });
 const eventSchema = new mongoose.Schema({
-    name: String,
-    time: Date,
-    location: String,
-    description: String,
+    name: { type: String, required: true },
+    startTime: { type: Date, required: true },
+    endTime: { type: Date, required: true },
+    location: { type: String, required: true },
+    description: { type: String },
     createdAt: { type: Date, default: Date.now }
 });
 
@@ -242,23 +243,54 @@ app.post("/api/updateAvatar", async (req, res) => {
 
 // ================= sự kiện =================
 
+
 // Lấy tất cả sự kiện
 app.get("/api/events", async (req, res) => {
-    const events = await Event.find().sort({ createdAt: -1 });
-    res.json(events);
-});
-
-// Tạo sự kiện
-app.post("/api/events", async (req, res) => {
     try {
-        const { name, time, location, description } = req.body;
-        const event = new Event({ name, time, location, description });
-        await event.save();
-        res.json({ message: "Tạo sự kiện thành công", event });
+        const events = await Event.find().sort({ createdAt: -1 });
+
+        res.json({
+            message: "Lấy danh sách sự kiện thành công",
+            count: events.length,
+            events
+        });
     } catch (err) {
+        console.error("❌ Lỗi khi lấy sự kiện:", err);
         res.status(500).json({ message: err.message });
     }
 });
+
+// Tạo sự kiện (có startTime và endTime)
+app.post("/api/events", async (req, res) => {
+    try {
+        const { name, startTime, endTime, location, description } = req.body;
+
+        // Kiểm tra dữ liệu đầu vào
+        if (!name || !startTime || !endTime || !location) {
+            return res.status(400).json({ message: "Thiếu thông tin sự kiện" });
+        }
+
+        // Tạo mới sự kiện
+        const event = new Event({
+            name,
+            startTime: new Date(startTime), // chuyển về kiểu Date
+            endTime: new Date(endTime),
+            location,
+            description
+        });
+
+        await event.save();
+
+        res.json({
+            message: "✅ Tạo sự kiện thành công",
+            event
+        });
+    } catch (err) {
+        console.error("❌ Lỗi tạo sự kiện:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
 
 // Sửa sự kiện
 app.put("/api/events/:id", async (req, res) => {
@@ -287,6 +319,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
