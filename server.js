@@ -38,8 +38,15 @@ const userSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now },
     sole: { type: String, default: "User" }
 });
+const eventSchema = new mongoose.Schema({
+    name: String,
+    time: Date,
+    location: String,
+    description: String,
+    createdAt: { type: Date, default: Date.now }
+});
 
-
+const Event = mongoose.model("Event", eventSchema);
 const User = mongoose.model("User", userSchema);
 
 
@@ -122,7 +129,7 @@ app.post("/api/login", async (req, res) => {
         res.json({ 
     message: "Đăng nhập thành công", 
     token, 
-    role: user.role // admin hoặc user
+    role: user.sole.toLowerCase() 
 });
 
     } catch (err) {
@@ -280,6 +287,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
