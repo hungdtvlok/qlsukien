@@ -295,13 +295,29 @@ app.post("/api/events", async (req, res) => {
 // Sửa sự kiện
 app.put("/api/events/:id", async (req, res) => {
     try {
-        const { name, time, location, description } = req.body;
-        const event = await Event.findByIdAndUpdate(req.params.id, { name, time, location, description }, { new: true });
+        const { name, startTime, endTime, location, description } = req.body;
+
+        // Chuyển ISO string sang Date
+        const event = await Event.findByIdAndUpdate(
+            req.params.id,
+            {
+                name,
+                startTime: startTime ? new Date(startTime) : undefined,
+                endTime: endTime ? new Date(endTime) : undefined,
+                location,
+                description
+            },
+            { new: true } // trả về document mới cập nhật
+        );
+
+        if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+
         res.json({ message: "Cập nhật sự kiện thành công", event });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // Xóa sự kiện
 app.delete("/api/events/:id", async (req, res) => {
@@ -319,6 +335,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
