@@ -119,7 +119,11 @@ app.post("/api/login", async (req, res) => {
         const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: "1h" });
 
         // Trả về token
-        res.json({ message: "Đăng nhập thành công", token });
+        res.json({ 
+    message: "Đăng nhập thành công", 
+    token, 
+    role: user.role // admin hoặc user
+});
 
     } catch (err) {
         console.error("❌ Lỗi đăng nhập:", err);
@@ -276,6 +280,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
