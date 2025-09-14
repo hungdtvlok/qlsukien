@@ -339,43 +339,66 @@ const registrationSchema = new mongoose.Schema({
 const Registration = mongoose.model("Registration", registrationSchema);
 
 // Đăng ký tham gia sự kiện
+// Đăng ký tham gia sự kiện
 app.post("/api/registerEvent", async (req, res) => {
     try {
-        const { userId, eventId } = req.body;
+        const { username, eventId } = req.body;
 
-        if (!userId || !eventId) {
-            return res.status(400).json({ message: "Thiếu userId hoặc eventId" });
+        if (!username || !eventId) {
+            return res.status(400).json({ message: "Thiếu username hoặc eventId" });
         }
 
-        // Kiểm tra user và event có tồn tại không
-        const user = await User.findById(userId);
+        // Tìm user theo username
+        const user = await User.findOne({ username });
         const event = await Event.findById(eventId);
+
         if (!user || !event) {
             return res.status(404).json({ message: "User hoặc Event không tồn tại" });
         }
 
-        // Kiểm tra user đã đăng ký chưa
-        const existing = await Registration.findOne({ userId, eventId });
+        // Kiểm tra đã đăng ký chưa
+        const existing = await Registration.findOne({ userId: user._id, eventId });
         if (existing) {
             return res.status(400).json({ message: "Bạn đã đăng ký sự kiện này rồi" });
         }
 
-        // Tạo mới đăng ký
-        const registration = new Registration({ userId, eventId });
+        // Tạo đăng ký mới
+        const registration = new Registration({ userId: user._id, eventId });
         await registration.save();
 
-        res.json({ message: "Đăng ký sự kiện thành công", registration });
+        res.json({
+            message: "Đăng ký sự kiện thành công",
+            registration,
+            user: {
+                username: user.username,
+                fullName: user.fullName,
+                email: user.email,
+                phone: user.phone
+            },
+            event: {
+                name: event.name,
+                location: event.location,
+                startTime: event.startTime,
+                endTime: event.endTime
+            }
+        });
     } catch (err) {
         console.error("❌ Lỗi đăng ký sự kiện:", err);
         res.status(500).json({ message: err.message });
     }
 });
- // Lấy sự kiện mà user đã đăng ký
-app.get("/api/myEvents/:userId", async (req, res) => {
-    try {
-        const { userId } = req.params;
 
-        const registrations = await Registration.find({ userId }).populate("eventId");
+ // Lấy sự kiện mà user đã đăng ký
+// Lấy sự kiện mà user đã đăng ký
+app.get("/api/myEvents/:username", async (req, res) => {
+    try {
+        const { username } = req.params;
+
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: "User không tồn tại" });
+
+        const registrations = await Registration.find({ userId: user._id }).populate("eventId");
+
         res.json({
             message: "Lấy danh sách sự kiện đã đăng ký thành công",
             events: registrations.map(r => r.eventId)
@@ -384,15 +407,19 @@ app.get("/api/myEvents/:userId", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 // Hủy đăng ký sự kiện
 app.delete("/api/unregisterEvent", async (req, res) => {
     try {
-        const { userId, eventId } = req.body;
-        if (!userId || !eventId) {
-            return res.status(400).json({ message: "Thiếu userId hoặc eventId" });
+        const { username, eventId } = req.body;
+        if (!username || !eventId) {
+            return res.status(400).json({ message: "Thiếu username hoặc eventId" });
         }
 
-        const deleted = await Registration.findOneAndDelete({ userId, eventId });
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: "User không tồn tại" });
+
+        const deleted = await Registration.findOneAndDelete({ userId: user._id, eventId });
         if (!deleted) {
             return res.status(404).json({ message: "Không tìm thấy đăng ký để hủy" });
         }
@@ -404,11 +431,13 @@ app.delete("/api/unregisterEvent", async (req, res) => {
 });
 
 
+
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
