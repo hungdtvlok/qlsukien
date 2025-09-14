@@ -329,12 +329,87 @@ app.delete("/api/events/:id", async (req, res) => {
     }
 });
 
+// ================== REGISTRATION SCHEMA ==================
+const registrationSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    eventId: { type: mongoose.Schema.Types.ObjectId, ref: "Event", required: true },
+    registeredAt: { type: Date, default: Date.now }
+});
+
+const Registration = mongoose.model("Registration", registrationSchema);
+
+// Đăng ký tham gia sự kiện
+app.post("/api/registerEvent", async (req, res) => {
+    try {
+        const { userId, eventId } = req.body;
+
+        if (!userId || !eventId) {
+            return res.status(400).json({ message: "Thiếu userId hoặc eventId" });
+        }
+
+        // Kiểm tra user và event có tồn tại không
+        const user = await User.findById(userId);
+        const event = await Event.findById(eventId);
+        if (!user || !event) {
+            return res.status(404).json({ message: "User hoặc Event không tồn tại" });
+        }
+
+        // Kiểm tra user đã đăng ký chưa
+        const existing = await Registration.findOne({ userId, eventId });
+        if (existing) {
+            return res.status(400).json({ message: "Bạn đã đăng ký sự kiện này rồi" });
+        }
+
+        // Tạo mới đăng ký
+        const registration = new Registration({ userId, eventId });
+        await registration.save();
+
+        res.json({ message: "Đăng ký sự kiện thành công", registration });
+    } catch (err) {
+        console.error("❌ Lỗi đăng ký sự kiện:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+ // Lấy sự kiện mà user đã đăng ký
+app.get("/api/myEvents/:userId", async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const registrations = await Registration.find({ userId }).populate("eventId");
+        res.json({
+            message: "Lấy danh sách sự kiện đã đăng ký thành công",
+            events: registrations.map(r => r.eventId)
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+// Hủy đăng ký sự kiện
+app.delete("/api/unregisterEvent", async (req, res) => {
+    try {
+        const { userId, eventId } = req.body;
+        if (!userId || !eventId) {
+            return res.status(400).json({ message: "Thiếu userId hoặc eventId" });
+        }
+
+        const deleted = await Registration.findOneAndDelete({ userId, eventId });
+        if (!deleted) {
+            return res.status(404).json({ message: "Không tìm thấy đăng ký để hủy" });
+        }
+
+        res.json({ message: "Hủy đăng ký sự kiện thành công" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
