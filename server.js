@@ -339,7 +339,6 @@ const registrationSchema = new mongoose.Schema({
 const Registration = mongoose.model("Registration", registrationSchema);
 
 // Đăng ký tham gia sự kiện
-// Đăng ký tham gia sự kiện
 app.post("/api/registerEvent", async (req, res) => {
     try {
         const { username, eventId } = req.body;
@@ -388,22 +387,33 @@ app.post("/api/registerEvent", async (req, res) => {
     }
 });
 
- // Lấy sự kiện mà user đã đăng ký
-// Lấy sự kiện mà user đã đăng ký
+ // Lấy sự kiện mà user đã đăng ký theo username
 app.get("/api/myEvents/:username", async (req, res) => {
     try {
         const { username } = req.params;
 
+        // 1. Tìm user theo username
         const user = await User.findOne({ username });
         if (!user) return res.status(404).json({ message: "User không tồn tại" });
 
+        // 2. Lấy danh sách đăng ký của user này
+        // registration lưu userId và eventId
         const registrations = await Registration.find({ userId: user._id }).populate("eventId");
+
+        // 3. Trả về mảng bao gồm userId, eventId, registeredAt
+        const result = registrations.map(r => ({
+            userId: r.userId,
+            eventId: r.eventId,   // nếu populate sẽ có toàn bộ object event
+            registeredAt: r.registeredAt
+        }));
 
         res.json({
             message: "Lấy danh sách sự kiện đã đăng ký thành công",
-            events: registrations.map(r => r.eventId)
+            events: result
         });
+
     } catch (err) {
+        console.error(err);
         res.status(500).json({ message: err.message });
     }
 });
@@ -437,6 +447,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
