@@ -386,6 +386,21 @@ app.post("/api/registerEvent", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+// Lấy tất cả đã đăng ký
+app.get("/api/registerEvent", async (req, res) => {
+    try {
+        const events = await Event.find().sort({ createdAt: -1 });
+
+        res.json({
+            message: "Lấy danh sách sự kiện thành công",
+            count: events.length,
+            events
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi lấy sự kiện:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
 
  // Lấy sự kiện mà user đã đăng ký theo username
 app.get("/api/registerEvent/:username", async (req, res) => {
@@ -457,6 +472,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
