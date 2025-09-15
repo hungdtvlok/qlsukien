@@ -422,7 +422,7 @@ app.post("/api/unregisterEvent", async (req, res) => {
             return res.status(400).json({ message: "Thiếu userId hoặc eventId" });
         }
 
-        // Chuyển string sang ObjectId
+        // Xóa đăng ký dựa trên ObjectId
         const deleted = await Registration.findOneAndDelete({
             userId: mongoose.Types.ObjectId(userId),
             eventId: mongoose.Types.ObjectId(eventId)
@@ -434,11 +434,13 @@ app.post("/api/unregisterEvent", async (req, res) => {
         }
 
         res.json({ message: "Hủy đăng ký sự kiện thành công" });
+
     } catch (err) {
-        console.error(err);
+        console.error("❌ Lỗi khi hủy đăng ký:", err);
         res.status(500).json({ message: err.message });
     }
 });
+
 
 
 
@@ -451,6 +453,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
