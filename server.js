@@ -388,8 +388,7 @@ app.post("/api/registerEvent", async (req, res) => {
 });
 
  // Lấy sự kiện mà user đã đăng ký theo username
-// Route lấy tất cả sự kiện đã đăng ký theo username
-app.get("/api/myRegistrations/:username", async (req, res) => {
+app.get("/api/registerEvent/:username", async (req, res) => {
     try {
         const { username } = req.params;
 
@@ -439,6 +438,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
