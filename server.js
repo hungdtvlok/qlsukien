@@ -414,20 +414,20 @@ app.get("/api/registerEvent/:username", async (req, res) => {
 // Hủy đăng ký sự kiện
 app.post("/api/unregisterEvent", async (req, res) => {
     try {
-        const { username, eventId } = req.body;
+        const { userId, eventId } = req.body;
 
-        if (!username || !eventId)
-            return res.status(400).json({ message: "Thiếu username hoặc eventId" });
-
-        const user = await User.findOne({ username });
-        if (!user) return res.status(404).json({ message: "User không tồn tại" });
+        if (!userId || !eventId) {
+            return res.status(400).json({ message: "Thiếu userId hoặc eventId" });
+        }
 
         const deleted = await Registration.findOneAndDelete({
-            userId: user._id,
+            userId: mongoose.Types.ObjectId(userId),
             eventId: mongoose.Types.ObjectId(eventId)
         });
 
-        if (!deleted) return res.status(404).json({ message: "Không tìm thấy đăng ký để hủy" });
+        if (!deleted) {
+            return res.status(404).json({ message: "Không tìm thấy đăng ký để hủy" });
+        }
 
         res.json({ message: "Hủy đăng ký sự kiện thành công" });
     } catch (err) {
@@ -446,6 +446,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
