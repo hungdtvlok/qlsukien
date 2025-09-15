@@ -416,23 +416,22 @@ app.post("/api/unregisterEvent", async (req, res) => {
     try {
         const { userId, eventId } = req.body;
 
-        // Kiểm tra dữ liệu đầu vào
         if (!userId || !eventId) {
             return res.status(400).json({ message: "Thiếu userId hoặc eventId" });
         }
 
-        // Kiểm tra user và event có tồn tại không
+        // Kiểm tra user và event tồn tại
         const userExists = await User.findById(userId);
         const eventExists = await Event.findById(eventId);
 
         if (!userExists || !eventExists) {
-            return res.status(404).json({ message: "User hoặc Event không tồn tại, không thể hủy đăng ký" });
+            return res.status(404).json({ message: "User hoặc Event không tồn tại" });
         }
 
         // Xóa tất cả đăng ký trùng userId + eventId
         const result = await Registration.deleteMany({
-            userId: mongoose.Types.ObjectId(userId),
-            eventId: mongoose.Types.ObjectId(eventId)
+            userId: new mongoose.Types.ObjectId(userId),
+            eventId: new mongoose.Types.ObjectId(eventId)
         });
 
         if (result.deletedCount === 0) {
@@ -440,10 +439,9 @@ app.post("/api/unregisterEvent", async (req, res) => {
         }
 
         res.json({ message: `Đã hủy ${result.deletedCount} đăng ký thành công` });
-
     } catch (err) {
-        console.error("❌ Lỗi hủy đăng ký:", err);
-        res.status(500).json({ message: "Server error: " + err.message });
+        console.error(err);
+        res.status(500).json({ message: err.message });
     }
 });
 
@@ -459,6 +457,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
