@@ -387,7 +387,7 @@ app.post("/api/registerEvent", async (req, res) => {
     }
 });
 // Lấy tất cả đã đăng ký
-app.get("/api/registerEvent", async (req, res) => {
+app.get("/api/allregisterEvent", async (req, res) => {
     try {
         const events = await Event.find().sort({ createdAt: -1 });
 
@@ -472,6 +472,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
