@@ -412,6 +412,7 @@ app.get("/api/registerEvent/:username", async (req, res) => {
 
 
 // Hủy đăng ký sự kiện
+
 app.post("/api/unregisterEvent", async (req, res) => {
     try {
         const { username, eventId } = req.body;
@@ -437,11 +438,13 @@ app.post("/api/unregisterEvent", async (req, res) => {
 
 
 
+
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
