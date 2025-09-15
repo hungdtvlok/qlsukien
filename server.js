@@ -392,21 +392,23 @@ app.get("/api/registerEvent/:username", async (req, res) => {
     try {
         const { username } = req.params;
 
-        // Lấy userId từ bảng users
         const user = await User.findOne({ username });
         if (!user) return res.status(404).json({ message: "User không tồn tại" });
 
-        // Lấy tất cả registrations của userId
-        const registrations = await Registration.find({ userId: user._id });
+        // Lấy tất cả registrations và populate userId + eventId
+        const registrations = await Registration.find({ userId: user._id })
+            .populate("userId", "username fullName email phone")  // Chỉ lấy 4 trường
+            .populate("eventId", "name location startTime endTime"); // Chỉ lấy 4 trường
 
         res.json({
             message: "Lấy danh sách registrations thành công",
-            registrations: registrations
+            registrations
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 
 // Hủy đăng ký sự kiện
@@ -438,6 +440,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
