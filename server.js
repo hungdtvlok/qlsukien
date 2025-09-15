@@ -412,20 +412,25 @@ app.get("/api/registerEvent/:username", async (req, res) => {
 
 
 // Hủy đăng ký sự kiện
+const mongoose = require("mongoose");
+
 app.post("/api/unregisterEvent", async (req, res) => {
     try {
         const { userId, eventId } = req.body;
+        console.log("Request body:", req.body);
 
         if (!userId || !eventId) {
             return res.status(400).json({ message: "Thiếu userId hoặc eventId" });
         }
 
+        // Chuyển string sang ObjectId
         const deleted = await Registration.findOneAndDelete({
             userId: mongoose.Types.ObjectId(userId),
             eventId: mongoose.Types.ObjectId(eventId)
         });
 
         if (!deleted) {
+            console.log("Không tìm thấy đăng ký để hủy");
             return res.status(404).json({ message: "Không tìm thấy đăng ký để hủy" });
         }
 
@@ -441,11 +446,13 @@ app.post("/api/unregisterEvent", async (req, res) => {
 
 
 
+
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
