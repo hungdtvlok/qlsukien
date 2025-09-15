@@ -388,35 +388,27 @@ app.post("/api/registerEvent", async (req, res) => {
 });
 
  // Lấy sự kiện mà user đã đăng ký theo username
-app.get("/api/myEvents/:username", async (req, res) => {
+// Route lấy tất cả sự kiện đã đăng ký theo username
+app.get("/api/myRegistrations/:username", async (req, res) => {
     try {
         const { username } = req.params;
 
-        // 1. Tìm user theo username
+        // Lấy userId từ bảng users
         const user = await User.findOne({ username });
         if (!user) return res.status(404).json({ message: "User không tồn tại" });
 
-        // 2. Lấy danh sách đăng ký của user này
-        // registration lưu userId và eventId
-        const registrations = await Registration.find({ userId: user._id }).populate("eventId");
-
-        // 3. Trả về mảng bao gồm userId, eventId, registeredAt
-        const result = registrations.map(r => ({
-            userId: r.userId,
-            eventId: r.eventId,   // nếu populate sẽ có toàn bộ object event
-            registeredAt: r.registeredAt
-        }));
+        // Lấy tất cả registrations của userId
+        const registrations = await Registration.find({ userId: user._id });
 
         res.json({
-            message: "Lấy danh sách sự kiện đã đăng ký thành công",
-            events: result
+            message: "Lấy danh sách registrations thành công",
+            registrations: registrations
         });
-
     } catch (err) {
-        console.error(err);
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // Hủy đăng ký sự kiện
 app.delete("/api/unregisterEvent", async (req, res) => {
@@ -447,6 +439,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
