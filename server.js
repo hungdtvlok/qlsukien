@@ -431,7 +431,7 @@ app.get("/api/registerEvent/:username", async (req, res) => {
 });
 
 //  chỉnh sửa đăng ký sự kiện
-router.post("/api/EditRegisterEvent", async (req, res) => {
+app.post("/api/EditRegisterEvent", async (req, res) => {
     try {
         const { registrationId, userId, eventId } = req.body;
 
@@ -444,7 +444,6 @@ router.post("/api/EditRegisterEvent", async (req, res) => {
             return res.status(404).json({ success: false, message: "Không tìm thấy đăng ký" });
         }
 
-        // Nếu có userId/eventId mới thì cập nhật
         if (userId) registration.userId = mongoose.Types.ObjectId(userId);
         if (eventId) registration.eventId = mongoose.Types.ObjectId(eventId);
 
@@ -508,6 +507,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
