@@ -554,6 +554,87 @@ app.get("/api/participants", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+// ================== API THÊM PARTICIPANT ==================
+app.post("/api/participants", async (req, res) => {
+    try {
+        const { fullName, email, phone, eventName, startTime, endTime } = req.body;
+
+        if (!fullName || !email || !phone || !eventName) {
+            return res.status(400).json({ message: "Thiếu thông tin participant" });
+        }
+
+        const newParticipant = new Participant({
+            fullName,
+            email,
+            phone,
+            eventName,
+            startTime: startTime ? new Date(startTime) : null,
+            endTime: endTime ? new Date(endTime) : null,
+            registeredBy: "người đăng ký"
+        });
+
+        await newParticipant.save();
+
+        res.status(201).json({
+            message: "✅ Thêm participant thành công",
+            participant: newParticipant
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi thêm participant:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+// ================== API SỬA PARTICIPANT ==================
+app.put("/api/participants/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { fullName, email, phone, eventName, startTime, endTime } = req.body;
+
+        const updatedParticipant = await Participant.findByIdAndUpdate(
+            id,
+            {
+                fullName,
+                email,
+                phone,
+                eventName,
+                startTime: startTime ? new Date(startTime) : null,
+                endTime: endTime ? new Date(endTime) : null,
+            },
+            { new: true } // trả về bản ghi sau khi update
+        );
+
+        if (!updatedParticipant) {
+            return res.status(404).json({ message: "❌ Không tìm thấy participant để sửa" });
+        }
+
+        res.json({
+            message: "✅ Cập nhật participant thành công",
+            participant: updatedParticipant
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi cập nhật participant:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+// ================== API XÓA PARTICIPANT ==================
+app.delete("/api/participants/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedParticipant = await Participant.findByIdAndDelete(id);
+
+        if (!deletedParticipant) {
+            return res.status(404).json({ message: "❌ Không tìm thấy participant để xóa" });
+        }
+
+        res.json({
+            message: "✅ Xóa participant thành công",
+            participant: deletedParticipant
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi xóa participant:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
 
 
 
@@ -565,6 +646,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
