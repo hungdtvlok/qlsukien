@@ -495,7 +495,65 @@ app.post("/api/unregisterEvent", async (req, res) => {
     }
 });
 
+// ================== PARTICIPANT SCHEMA ==================
+const participantSchema = new mongoose.Schema({
+    fullName: { type: String },
+    email: { type: String },
+    phone: { type: String },
+    eventName: { type: String },
+    startTime: { type: Date },
+    endTime: { type: Date },
+    createdAt: { type: Date, default: Date.now }, 
+    registeredBy: { type: String, default: "người đăng ký" } 
+});
 
+const Participant = mongoose.model("Participant", participantSchema);
+
+// ================== API thêm PARTICIPANT ==================
+app.post("/api/addParticipant", async (req, res) => {
+    try {
+        const { fullName, email, phone, eventName, startTime, endTime } = req.body;
+
+        if (!fullName || !email || !phone || !eventName) {
+            return res.status(400).json({ message: "Thiếu thông tin participant" });
+        }
+
+        const newParticipant = new Participant({
+            fullName,
+            email,
+            phone,
+            eventName,
+            startTime: startTime ? new Date(startTime) : null,
+            endTime: endTime ? new Date(endTime) : null,
+            registeredBy: "người đăng ký" // luôn mặc định
+        });
+
+        await newParticipant.save();
+
+        res.status(201).json({
+            message: "Thêm participant thành công",
+            participant: newParticipant
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi thêm participant:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Lấy tất cả participants
+app.get("/api/participants", async (req, res) => {
+    try {
+        const participants = await Participant.find().sort({ createdAt: -1 });
+        res.json({
+            message: "Lấy danh sách participants thành công",
+            count: participants.length,
+            participants
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi lấy participants:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
 
 
 
@@ -507,6 +565,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
