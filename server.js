@@ -525,7 +525,7 @@ app.post("/api/addParticipant", async (req, res) => {
             eventName,
             startTime: startTime ? new Date(startTime) : null,
             endTime: endTime ? new Date(endTime) : null,
-            registeredBy: "người đăng ký" // luôn mặc định
+            registeredBy: "" // luôn mặc định
         });
 
         await newParticipant.save();
@@ -646,6 +646,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
