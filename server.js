@@ -564,6 +564,12 @@ app.post("/api/participants", async (req, res) => {
             return res.status(400).json({ message: "Thiếu thông tin participant" });
         }
 
+        // 🔎 Kiểm tra trùng (dựa vào email + eventName hoặc phone + eventName)
+        const existing = await Participant.findOne({ email, eventName });
+        if (existing) {
+            return res.status(400).json({ message: "❌ Participant đã có trong danh sách" });
+        }
+
         const newParticipant = new Participant({
             fullName,
             email,
@@ -571,7 +577,7 @@ app.post("/api/participants", async (req, res) => {
             eventName,
             startTime: startTime ? new Date(startTime) : null,
             endTime: endTime ? new Date(endTime) : null,
-            registeredBy 
+            registeredBy
         });
 
         await newParticipant.save();
@@ -586,26 +592,27 @@ app.post("/api/participants", async (req, res) => {
     }
 });
 
+
 // ================== API SỬA PARTICIPANT ==================
 app.put("/api/participants/:id", async (req, res) => {
     try {
         const { id } = req.params;
         const { fullName, email, phone, eventName, startTime, endTime, registeredBy } = req.body;
 
-        // Tạo object update chỉ chứa field có giá trị
         const updateFields = {};
-        if (fullName) updateFields.fullName = fullName;
-        if (email) updateFields.email = email;
-        if (phone) updateFields.phone = phone;
-        if (eventName) updateFields.eventName = eventName;
-        if (startTime) updateFields.startTime = new Date(startTime);
-        if (endTime) updateFields.endTime = new Date(endTime);
-        if (registeredBy) updateFields.registeredBy = registeredBy;
+
+        if (fullName !== undefined) updateFields.fullName = fullName;
+        if (email !== undefined) updateFields.email = email;
+        if (phone !== undefined) updateFields.phone = phone;
+        if (eventName !== undefined) updateFields.eventName = eventName;
+        if (startTime !== undefined) updateFields.startTime = new Date(startTime);
+        if (endTime !== undefined) updateFields.endTime = new Date(endTime);
+        if (registeredBy !== undefined) updateFields.registeredBy = registeredBy;
 
         const updatedParticipant = await Participant.findByIdAndUpdate(
             id,
-            updateFields,
-            { new: true } // trả về bản ghi sau khi update
+            { $set: updateFields }, // chỉ set những field cần update
+            { new: true }
         );
 
         if (!updatedParticipant) {
@@ -621,6 +628,7 @@ app.put("/api/participants/:id", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // ================== API XÓA PARTICIPANT ==================
 app.delete("/api/participants/:id", async (req, res) => {
@@ -652,6 +660,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
