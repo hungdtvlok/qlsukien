@@ -509,7 +509,7 @@ const participantSchema = new mongoose.Schema({
 
 const Participant = mongoose.model("Participant", participantSchema);
 
-// ================== API thêm PARTICIPANT ==================
+// ================== API thêm từ quản lý người sự kiện đăng ký và0 PARTICIPANT ==================
 app.post("/api/addParticipant", async (req, res) => {
     try {
         const { fullName, email, phone, eventName, startTime, endTime } = req.body;
@@ -525,7 +525,7 @@ app.post("/api/addParticipant", async (req, res) => {
             eventName,
             startTime: startTime ? new Date(startTime) : null,
             endTime: endTime ? new Date(endTime) : null,
-            registeredBy: "" // luôn mặc định
+            registeredBy: "người đăng ký" // luôn mặc định
         });
 
         await newParticipant.save();
@@ -555,11 +555,12 @@ app.get("/api/participants", async (req, res) => {
     }
 });
 // ================== API THÊM PARTICIPANT ==================
+
 app.post("/api/participants", async (req, res) => {
     try {
-        const { fullName, email, phone, eventName, startTime, endTime } = req.body;
+        const { fullName, email, phone, eventName, startTime, endTime, registeredBy } = req.body;
 
-        if (!fullName || !email || !phone || !eventName) {
+        if (!fullName || !email || !phone || !eventName || !registeredBy) {
             return res.status(400).json({ message: "Thiếu thông tin participant" });
         }
 
@@ -570,7 +571,7 @@ app.post("/api/participants", async (req, res) => {
             eventName,
             startTime: startTime ? new Date(startTime) : null,
             endTime: endTime ? new Date(endTime) : null,
-            registeredBy: "người đăng ký"
+            registeredBy 
         });
 
         await newParticipant.save();
@@ -584,6 +585,7 @@ app.post("/api/participants", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 // ================== API SỬA PARTICIPANT ==================
 app.put("/api/participants/:id", async (req, res) => {
     try {
@@ -646,6 +648,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
