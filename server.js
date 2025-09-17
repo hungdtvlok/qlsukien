@@ -510,12 +510,19 @@ const participantSchema = new mongoose.Schema({
 const Participant = mongoose.model("Participant", participantSchema);
 
 // ================== API thêm từ quản lý người sự kiện đăng ký và0 PARTICIPANT ==================
+// ================== API THÊM PARTICIPANT ==================
 app.post("/api/addParticipant", async (req, res) => {
     try {
         const { fullName, email, phone, eventName, startTime, endTime } = req.body;
 
         if (!fullName || !email || !phone || !eventName) {
             return res.status(400).json({ message: "Thiếu thông tin participant" });
+        }
+
+        // 🔎 Kiểm tra trùng: email + eventName
+        const existing = await Participant.findOne({ email, eventName });
+        if (existing) {
+            return res.status(400).json({ message: "❌ Danh sách đã có trong sự kiện này" });
         }
 
         const newParticipant = new Participant({
@@ -525,13 +532,13 @@ app.post("/api/addParticipant", async (req, res) => {
             eventName,
             startTime: startTime ? new Date(startTime) : null,
             endTime: endTime ? new Date(endTime) : null,
-            registeredBy: "người đăng ký" // luôn mặc định
+            registeredBy: "người đăng ký" // mặc định
         });
 
         await newParticipant.save();
 
         res.status(201).json({
-            message: "Thêm participant thành công",
+            message: "✅ Thêm participant thành công",
             participant: newParticipant
         });
     } catch (err) {
@@ -539,6 +546,7 @@ app.post("/api/addParticipant", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // Lấy tất cả participants
 app.get("/api/participants", async (req, res) => {
@@ -660,6 +668,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
