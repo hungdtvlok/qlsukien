@@ -590,18 +590,21 @@ app.post("/api/participants", async (req, res) => {
 app.put("/api/participants/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        const { fullName, email, phone, eventName, startTime, endTime } = req.body;
+        const { fullName, email, phone, eventName, startTime, endTime, registeredBy } = req.body;
+
+        // Tạo object update chỉ chứa field có giá trị
+        const updateFields = {};
+        if (fullName) updateFields.fullName = fullName;
+        if (email) updateFields.email = email;
+        if (phone) updateFields.phone = phone;
+        if (eventName) updateFields.eventName = eventName;
+        if (startTime) updateFields.startTime = new Date(startTime);
+        if (endTime) updateFields.endTime = new Date(endTime);
+        if (registeredBy) updateFields.registeredBy = registeredBy;
 
         const updatedParticipant = await Participant.findByIdAndUpdate(
             id,
-            {
-                fullName,
-                email,
-                phone,
-                eventName,
-                startTime: startTime ? new Date(startTime) : null,
-                endTime: endTime ? new Date(endTime) : null,
-            },
+            updateFields,
             { new: true } // trả về bản ghi sau khi update
         );
 
@@ -618,6 +621,7 @@ app.put("/api/participants/:id", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 // ================== API XÓA PARTICIPANT ==================
 app.delete("/api/participants/:id", async (req, res) => {
     try {
@@ -648,6 +652,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
