@@ -1,6 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <item
+        android:id="@+id/nav_trangchu"
+
+        android:title="🏠 Trang chủ"
+         />
+
+    <item
+        android:id="@+id/nav_sukien"
+
+        android:title="🎉 Quản lý sự kiện và hội thảo" />
+
+    <item
+        android:id="@+id/nav_dangky"
+
+        android:title="📝 Quản lý người đăng ký" />
+
+    <item
+        android:id="@+id/nav_thamgia"
+
+        android:title="👥 Quản lý người tham gia" />
+
+    <item
+        android:id="@+id/nav_thongke"
+
+        android:title="📊 Thống kê" />
+
+    <item
+        android:id="@+id/nav_thoat"
+
+        android:title="🚪 Thoát" />
+
+</menu>

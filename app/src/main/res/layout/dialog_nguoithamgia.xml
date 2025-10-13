@@ -1,6 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="wrap_content"
+    android:padding="16dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Họ và tên -->
+        <EditText
+            android:id="@+id/etFullName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Họ và tên"
+            android:inputType="textPersonName"
+            android:padding="10dp"
+            android:background="@android:drawable/edit_text" />
+
+        <!-- Email -->
+        <EditText
+            android:id="@+id/etEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Email"
+            android:inputType="textEmailAddress"
+            android:padding="10dp"
+            android:layout_marginTop="8dp"
+            android:background="@android:drawable/edit_text" />
+
+        <!-- Số điện thoại -->
+        <EditText
+            android:id="@+id/etPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Số điện thoại"
+            android:inputType="phone"
+            android:padding="10dp"
+            android:layout_marginTop="8dp"
+            android:background="@android:drawable/edit_text" />
+
+        <!-- Tên sự kiện -->
+        <EditText
+            android:id="@+id/etEventName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Tên sự kiện"
+            android:inputType="textCapWords"
+            android:padding="10dp"
+            android:layout_marginTop="8dp"
+            android:background="@android:drawable/edit_text" />
+
+        <!-- Thời gian bắt đầu -->
+        <EditText
+            android:id="@+id/etStartTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Thời gian bắt đầu "
+            android:focusable="false"
+            android:inputType="datetime"
+            android:padding="10dp"
+            android:layout_marginTop="8dp"
+            android:background="@android:drawable/edit_text" />
+
+        <!-- Thời gian kết thúc -->
+        <EditText
+            android:id="@+id/etEndTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Thời gian kết thúc "
+            android:focusable="false"
+            android:inputType="datetime"
+            android:padding="10dp"
+            android:layout_marginTop="8dp"
+            android:background="@android:drawable/edit_text" />
+
+        <!-- Người đăng ký -->
+        <EditText
+            android:id="@+id/etRegisteredBy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Người tham gia"
+            android:inputType="textPersonName"
+            android:padding="10dp"
+            android:layout_marginTop="8dp"
+            android:background="@android:drawable/edit_text" />
+
+    </LinearLayout>
+</ScrollView>

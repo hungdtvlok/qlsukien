@@ -1,35 +1,81 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<androidx.drawerlayout.widget.DrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    tools:context=".SuKienActivity">
 
-    <EditText
-        android:id="@+id/etSearchPlate"
+    <!-- Nội dung chính -->
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@android:drawable/edit_text"
-        android:hint="Tìm kiếm "
-        android:padding="12dp"
-        android:drawableLeft="@android:drawable/ic_menu_search"
-        android:drawablePadding="8dp"
-        android:textSize="16sp"/>
+        android:layout_height="match_parent">
 
-    <!-- Nút thêm sự kiện -->
-    <Button
-        android:id="@+id/btnAddSuKien"
+        <!-- Toolbar -->
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorPrimary"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+            app:title="Quản lý sự kiện và hội thảo"
+            app:titleTextColor="@android:color/white" />
+
+        <!-- Phần nội dung -->
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="16dp">
+
+            <!-- Ô tìm kiếm -->
+            <EditText
+                android:id="@+id/etSearchPlate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@android:drawable/edit_text"
+                android:hint="Tìm kiếm tên hoặc ngày"
+                android:padding="12dp"
+                android:drawableLeft="@android:drawable/ic_menu_search"
+                android:drawablePadding="8dp"
+                android:textSize="16sp"/>
+
+            <!-- Nút thêm sự kiện (được làm đẹp) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddSuKien"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="➕ Thêm sự kiện"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                android:padding="12dp"
+                app:cornerRadius="30dp"
+                app:backgroundTint="#4CAF50"
+                android:elevation="6dp" />
+
+
+
+            <!-- Danh sách sự kiện -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerSuKien"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Navigation Drawer -->
+    <com.google.android.material.navigation.NavigationView
+        android:id="@+id/navigation_view"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Thêm sự kiện"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="16dp"/>
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        app:menu="@layout/nav_menu"
+        app:headerLayout="@layout/nav_header" />
 
-    <!-- RecyclerView hiển thị danh sách sự kiện -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerSuKien"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-</LinearLayout>
+</androidx.drawerlayout.widget.DrawerLayout>

@@ -1,4 +1,5 @@
 package com.example.qlsukien;
+
 public class NhanVien {
     private String username;
     private String fullName;
@@ -7,12 +8,12 @@ public class NhanVien {
     private String password;
     private String createdAt;
     private String updatedAt;
+    private String avatar; // base64 string
+    private String sole;   // thêm trường sole
 
-    // Thêm trường avatar (Base64)
-    private String avatarBase64;
-
-    // Constructor, getter, setter
-    public NhanVien(String username, String fullName, String email, String phone, String password, String createdAt, String updatedAt) {
+    // Constructor đầy đủ
+    public NhanVien(String username, String fullName, String email, String phone,
+                    String password, String createdAt, String updatedAt, String avatar) {
         this.username = username;
         this.fullName = fullName;
         this.email = email;
@@ -20,9 +21,11 @@ public class NhanVien {
         this.password = password;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.avatar = avatar;
+        this.sole = sole;
     }
 
-    // Getter và Setter thông thường
+    // Getter và Setter
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
 
@@ -44,7 +47,9 @@ public class NhanVien {
     public String getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
 
-    // Getter/Setter cho avatar
-    public String getAvatarBase64() { return avatarBase64; }
-    public void setAvatarBase64(String avatarBase64) { this.avatarBase64 = avatarBase64; }
+    public String getAvatar() { return avatar; }
+    public void setAvatar(String avatar) { this.avatar = avatar; }
+
+    public String getSole() { return sole; }
+    public void setSole(String sole) { this.sole = sole; } // thêm getter/setter cho sole
 }

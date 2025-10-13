@@ -18,6 +18,8 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 import android.content.Intent;
+import com.google.gson.Gson;
+
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -58,7 +60,13 @@ public class RegisterActivity extends AppCompatActivity {
         String password = edtPassword.getText().toString().trim();
         String confirmPassword = edtConfirmPassword.getText().toString().trim();
 
-        // kiểm tra dữ liệu
+        // Kiểm tra email có đuôi @gmail.com
+        if (!email.endsWith("@gmail.com")) {
+            Toast.makeText(this, "Email phải có đuôi @gmail.com", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Kiểm tra dữ liệu
         if (TextUtils.isEmpty(username) || TextUtils.isEmpty(fullName) ||
                 TextUtils.isEmpty(email) || TextUtils.isEmpty(phone) || TextUtils.isEmpty(password)) {
             Toast.makeText(this, "Vui lòng điền đầy đủ thông tin", Toast.LENGTH_SHORT).show();
@@ -70,11 +78,18 @@ public class RegisterActivity extends AppCompatActivity {
             return;
         }
 
-        // Logging interceptor để debug request/response
+        // Lấy giá trị role mặc định
+        String sole = "User"; // mặc định là User
+
+
+        // Khởi tạo NhanVien
+        NhanVien nv = new NhanVien(username, fullName, email, phone, password, null, null, null);
+        nv.setSole(sole); // gán sole mặc định
+
+        // Retrofit setup như cũ
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
-        // OkHttp client với timeout dài hơn (60s)
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(60, TimeUnit.SECONDS)
                 .readTimeout(60, TimeUnit.SECONDS)
@@ -82,29 +97,29 @@ public class RegisterActivity extends AppCompatActivity {
                 .addInterceptor(logging)
                 .build();
 
-        // Retrofit
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl("https://qlsukien-1.onrender.com/") // ⚠️ Base URL phải có dấu / ở cuối
+                .baseUrl("https://qlsukien-1.onrender.com/")
                 .addConverterFactory(GsonConverterFactory.create())
                 .client(client)
                 .build();
 
         ApiService api = retrofit.create(ApiService.class);
 
-        // Tạo đối tượng nhân viên
-        NhanVien nhanVien = new NhanVien(username, password, fullName, email, phone, null, null);
-
-        // Gọi API
-        api.registerUser(nhanVien).enqueue(new Callback<ApiResponse>() {
+        // Gọi API đăng ký
+        api.registerUser(nv).enqueue(new Callback<ApiResponse>() {
             @Override
             public void onResponse(Call<ApiResponse> call, Response<ApiResponse> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     Toast.makeText(RegisterActivity.this, response.body().getMessage(), Toast.LENGTH_SHORT).show();
-                    // ✅ Chuyển về LoginActivity sau khi đăng ký thành công
                     startActivity(new Intent(RegisterActivity.this, LoginActivity.class));
                     finish();
                 } else {
-                    Toast.makeText(RegisterActivity.this, "Đăng ký thất bại: " + response.code(), Toast.LENGTH_SHORT).show();
+                    try {
+                        ApiResponse errorResponse = new Gson().fromJson(response.errorBody().string(), ApiResponse.class);
+                        Toast.makeText(RegisterActivity.this, errorResponse.getMessage(), Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        Toast.makeText(RegisterActivity.this, "Đăng ký thất bại: " + response.code(), Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
 
@@ -114,4 +129,5 @@ public class RegisterActivity extends AppCompatActivity {
             }
         });
     }
+
 }

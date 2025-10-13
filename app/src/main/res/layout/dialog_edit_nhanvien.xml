@@ -5,17 +5,7 @@
     android:layout_height="wrap_content"
     android:background="#FFFFFF">
 
-    <!-- Ảnh đại diện nhân viên -->
 
-    <ImageView
-        android:id="@+id/imgAvatar"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:src="@mipmap/ic_launcher_round"
-        android:layout_gravity="center"
-        android:scaleType="centerCrop"
-        android:layout_marginBottom="16dp"
-        android:contentDescription="Ảnh đại diện" />
 
 
     <!-- Họ và tên -->
