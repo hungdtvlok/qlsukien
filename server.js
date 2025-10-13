@@ -748,8 +748,8 @@ transporter.verify((error, success) => {
     }
 });
 
-// 🕒 Cron job: chạy mỗi 10 phút
-cron.schedule("*/10 * * * *", async () => {
+// 🕒 Cron job: chạy mỗi phút
+cron.schedule("* * * * *", async () => {
     console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
 
     const now = new Date();
@@ -793,11 +793,63 @@ cron.schedule("*/10 * * * *", async () => {
     }
 });
 
+app.post("/api/sendReminderEmail", async (req, res) => {
+    try {
+        // Giờ hiện tại theo VN
+        const nowVN = new Date(new Date().getTime() + 7 * 60 * 60 * 1000); //giờ hiện tại theo VN
+        const twoHoursLaterVN = new Date(nowVN.getTime() + 2 * 60 * 60 * 1000); //2 tiếng sau giờ hiện tại theo VN
+
+        const registrations = await Registration.find()
+            .populate("eventId")
+            .populate("userId");
+
+        let sentCount = 0;
+
+        for (const reg of registrations) {
+            if (!reg.eventId || !reg.userId) continue;
+
+            // Chuyển giờ sự kiện sang giờ VN
+            const startTimeVN = new Date(new Date(reg.eventId.startTime).getTime() + 7 * 60 * 60 * 1000); //giờ bắt đầu sự kiện theo VN
+
+            // Kiểm tra sự kiện sắp bắt đầu trong 2 tiếng và chưa gửi email
+            if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
+                const formattedTime = startTimeVN.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+
+                const mailOptions = {
+                    from: '"Ban tổ chức sự kiện" <githich462@gmail.com>',
+                    to: reg.userId.email,
+                    subject: `📢 Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
+                    text: `Xin chào ${reg.userId.fullName},\n\nSự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.\nĐịa điểm: ${reg.eventId.location || "chưa cập nhật"}.\n\nHẹn gặp bạn tại sự kiện!\n\nTrân trọng,\nBan tổ chức.`,
+                };
+
+                try {
+                    await transporter.sendMail(mailOptions);
+                    console.log(`✅ Đã gửi email đến ${reg.userId.email}`);
+
+                    // Cập nhật flag email đã gửi
+                    reg.emailSent = true;
+                    await reg.save();
+                    sentCount++;
+                } catch (sendErr) {
+                    console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, sendErr);
+                }
+            }
+        }
+
+        res.json({ message: `Đã gửi ${sentCount} email nhắc nhở` });
+    } catch (err) {
+        console.error("❌ Lỗi khi gửi email nhắc nhở:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
