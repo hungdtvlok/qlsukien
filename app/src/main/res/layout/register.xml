@@ -38,13 +38,31 @@
             android:inputType="textPersonName" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Họ và tên -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:hint="Họ và tên"
+        app:layout_constraintTop_toBottomOf="@id/layoutUsername"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edtName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPersonName" />
+    </com.google.android.material.textfield.TextInputLayout>
+
     <!-- Email -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/layoutEmail"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:hint="Email"
-        app:layout_constraintTop_toBottomOf="@id/layoutUsername"
+        app:layout_constraintTop_toBottomOf="@id/layoutName"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="16dp">
@@ -126,4 +144,18 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="24dp" />
 
+    <!-- Nút quay lại đăng nhập -->
+    <Button
+        android:id="@+id/btnBackLogin"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Quay lại đăng nhập"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@id/btnRegister"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:padding="12dp"
+        android:background="@drawable/button_border_blue"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

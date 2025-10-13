@@ -1,6 +1,47 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- Ảnh đại diện nhân viên -->
+
+    <ImageView
+        android:id="@+id/imgAvatar"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@mipmap/ic_launcher_round"
+        android:layout_gravity="center"
+        android:scaleType="centerCrop"
+        android:layout_marginBottom="16dp"
+        android:contentDescription="Ảnh đại diện" />
+
+
+    <!-- Họ và tên -->
+    <EditText
+        android:id="@+id/etFullName"
+        android:hint="Họ và tên"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textPersonName"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Email -->
+    <EditText
+        android:id="@+id/etEmail"
+        android:hint="Email"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textEmailAddress"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Số điện thoại -->
+    <EditText
+        android:id="@+id/etPhone"
+        android:hint="SĐT"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="phone"/>
+
+</LinearLayout>

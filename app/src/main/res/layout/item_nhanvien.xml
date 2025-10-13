@@ -1,6 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent">
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:padding="10dp"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF"
+    android:layout_margin="8dp"
+    android:elevation="2dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- Ảnh đại diện -->
+    <ImageView
+        android:id="@+id/imgAvatar"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:src="@mipmap/ic_launcher_round"
+        android:layout_gravity="center"
+        android:scaleType="centerCrop"
+        android:layout_marginBottom="12dp"/>
+
+    <TextView
+        android:id="@+id/tvUsername"
+        android:text="Tên đăng nhập: nguyenvana"
+
+        android:textSize="16sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/tvPassword"
+        android:text="Mật khẩu : 123"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"/>
+
+    <TextView
+    android:id="@+id/tvFullName"
+    android:text="Họ và tên: Nguyễn Văn A"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:textSize="16sp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/tvEmail"
+        android:text="Email: abc@gmail.com"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"/>
+
+    <TextView
+        android:id="@+id/tvPhone"
+        android:text="SĐT: 0987654321"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"/>
+
+
+    <TextView
+        android:id="@+id/tvCreatedAt"
+        android:text="Ngày tạo: 2025-09-10"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"/>
+
+    <TextView
+        android:id="@+id/tvUpdatedAt"
+        android:text="Ngày cập nhật: 2025-09-10"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="16sp"/>
+
+    <!-- Layout chứa 2 nút nằm cùng hàng -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="12dp"
+        android:gravity="end">
+
+        <Button
+            android:id="@+id/btnEdit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sửa thông tin"
+            android:backgroundTint="#FF9800"
+            android:textColor="#FFFFFF"
+            android:layout_marginEnd="12dp"
+            android:textSize="16sp"/>
+
+        <Button
+            android:id="@+id/btnChangePassword"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Đổi mật khẩu"
+            android:backgroundTint="#2196F3"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"/>
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <EditText
+        android:id="@+id/etSearchPlate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:drawable/edit_text"
+        android:hint="Tìm kiếm "
+        android:padding="12dp"
+        android:drawableLeft="@android:drawable/ic_menu_search"
+        android:drawablePadding="8dp"
+        android:textSize="16sp"/>
+
+    <!-- Nút thêm sự kiện -->
+    <Button
+        android:id="@+id/btnAddSuKien"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Thêm sự kiện"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- RecyclerView hiển thị danh sách sự kiện -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerSuKien"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+</LinearLayout>

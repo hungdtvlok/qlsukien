@@ -1,248 +1,873 @@
-// server.js
+
+// ================== IMPORT MODULES ==================
 const express = require("express");
 const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+
+
+// ================== INIT APP ==================
 const app = express();
 
-// Middleware
-app.use(express.json()); // thay bodyParser
+// Middleware để parse JSON từ client
+app.use(bodyParser.json());
+
+// Cho phép CORS để Android app có thể gọi API
 app.use(cors());
 
 // 🔑 SECRET KEY cho JWT
 const JWT_SECRET = "secret123";
 
-// Kết nối MongoDB
-mongoose.connect("mongodb+srv://bdx:123456789%40@cluster0.xmmbfgf.mongodb.net/qlsukien?retryWrites=true&w=majority", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => console.log("MongoDB connected"))
-  .catch(err => console.log("MongoDB connection error:", err));
 
-// Schema và Model cho người dùng
+
+
+
+
+
+// ================== MONGO DB CONNECTION ==================
+mongoose.connect(
+    "mongodb+srv://bdx:123456789%40@cluster0.xmmbfgf.mongodb.net/qlsukien?retryWrites=true&w=majority&appName=Cluster0",
+    { useNewUrlParser: true, useUnifiedTopology: true }
+)
+    .then(() => console.log("✅ MongoDB connected"))
+    .catch(err => console.error("❌ MongoDB connection error:", err));
+
+// ================== USER SCHEMA ==================
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
-    fullName: { type: String }, // 👈 thêm trường họ và tên
+    fullName: { type: String },
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true },
     password: { type: String, required: true },
+    avatar: { type: String, default: "" }, // thêm avatar
     createdAt: { type: Date, default: Date.now },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+    sole: { type: String, default: "User" }
+});
+const eventSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    startTime: { type: Date, required: true },
+    endTime: { type: Date, required: true },
+    location: { type: String, required: true },
+    description: { type: String },
+    createdAt: { type: Date, default: Date.now }
 });
 
+const Event = mongoose.model("Event", eventSchema);
 const User = mongoose.model("User", userSchema);
 
 
-// API đăng ký
-app.post("/register", async (req, res) => {
+
+// ================== API REGISTER ==================
+app.post("/api/register", async (req, res) => {
     try {
-        const { username, fullName, email, phone, password } = req.body;
+        console.log("Body received:", req.body);
+        const { username, fullName, email, phone, password, sole } = req.body; // lấy thêm sole từ client nếu có
 
-        // Kiểm tra dữ liệu đầu vào
-        if (!username || !fullName || !email || !phone || !password) {
-            return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin." });
+        // Kiểm tra dữ liệu bắt buộc
+        if (!username || !password || !email || !phone) {
+            return res.status(400).json({ message: "Thông tin đăng ký không hợp lệ" });
         }
 
-        // Validate email
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            return res.status(400).json({ message: "Email không hợp lệ." });
-        }
-
-        // Validate số điện thoại (9–12 số)
-        const phoneRegex = /^[0-9]{9,12}$/;
-        if (!phoneRegex.test(phone)) {
-            return res.status(400).json({ message: "Số điện thoại không hợp lệ." });
-        }
-
-        // Kiểm tra tài khoản hoặc email đã tồn tại
-        const existingUser = await User.findOne({ 
-            $or: [{ username }, { email }] 
-        });
+        // Kiểm tra trùng username/email
+        const existingUser = await User.findOne({ $or: [{ username }, { email }] });
         if (existingUser) {
-            return res.status(400).json({ message: "Tên đăng nhập hoặc email đã tồn tại." });
+            const field = existingUser.username === username ? "Username" : "Email";
+            return res.status(400).json({ message: "Tài khoản hoặc email đã tồn tại" });
         }
 
-        // Mã hoá mật khẩu
+        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Tạo user mới
-    const newUser = new User({
-    username,
-    fullName, // 👈 nhớ gửi từ Android qua
-    email,
-    phone,
-    password: hashedPassword,
-    createdAt: new Date(),
-    updatedAt: new Date()
-});
+        // Tạo user mới với sole mặc định là "User" nếu client không gửi
+        const newUser = new User({
+            username,
+            fullName,
+            email,
+            phone,
+            password: hashedPassword,
+            sole: sole || "User"
+        });
 
-
+        // Lưu vào MongoDB
         await newUser.save();
 
-        return res.status(201).json({ message: "Đăng ký thành công!" });
+        res.status(201).json({ message: "Đăng ký thành công" });
+
     } catch (err) {
-        console.error("❌ Lỗi /register:", err);
-        return res.status(500).json({ message: "Lỗi server." });
+        console.error("❌ Lỗi đăng ký:", err);
+
+        if (err.code === 11000) {
+            const field = Object.keys(err.keyValue)[0];
+            return res.status(400).json({ message: `${field} đã tồn tại` });
+        }
+
+        res.status(500).json({ message: "Server error: " + err.message });
     }
 });
 
 
 
-// API đăng nhập
-app.post("/login", async (req, res) => {
-    const { username, password } = req.body;
-
-    if (!username || !password) {
-        return res.status(400).json({ message: "Vui lòng nhập đầy đủ thông tin." });
-    }
-
+// ================== API LOGIN ==================
+app.post("/api/login", async (req, res) => {
     try {
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({ message: "Thông tin đăng nhập không hợp lệ" });
+        }
+
         // Tìm user theo username
         const user = await User.findOne({ username });
         if (!user) {
-            return res.status(400).json({ message: "Tài khoản không tồn tại." });
+            return res.status(400).json({ message: "Sai tài khoản hoặc mật khẩu" });
         }
 
-        // So sánh mật khẩu
+        // Kiểm tra password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
-            return res.status(400).json({ message: "Sai mật khẩu." });
+            return res.status(400).json({ message: "Sai tài khoản hoặc mật khẩu" });
         }
 
-        // Tạo JWT token
-        const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "7d" });
+        // Tạo JWT token (1 giờ)
+        const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: "1h" });
+
+        // Trả về token
+        res.json({
+            message: "Đăng nhập thành công",
+            token,
+            role: user.sole.toLowerCase()
+        });
+
+    } catch (err) {
+        console.error("❌ Lỗi đăng nhập:", err);
+        res.status(500).json({ message: "Server error: " + err.message });
+    }
+});
+// ================== API LẤY NHÂN VIÊN ==================
+app.get("/api/nhanvien", async (req, res) => {
+    try {
+        const { username } = req.query; // Lấy username từ query param
+        let users;
+
+        if (username) {
+            // Nếu có username, chỉ trả về user đó
+            users = await User.find({ username });
+        } else {
+            // Nếu không có username, trả về tất cả user
+            users = await User.find();
+        }
+
+        res.json(users);
+    } catch (err) {
+        console.error("❌ Lỗi lấy nhân viên:", err);
+        res.status(500).json({ message: "Server error: " + err.message });
+    }
+});
+
+// ================== API SỬA THÔNG TIN NHÂN VIÊN ==================
+app.post("/api/updateNhanVien", async (req, res) => {
+    try {
+        const { username, fullName, email, phone } = req.body;
+
+        if (!username || !fullName || !email || !phone) {
+            return res.status(400).json({ message: "Thiếu thông tin cập nhật" });
+        }
+
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
+
+        // Kiểm tra email trùng (nếu đổi)
+        const emailExists = await User.findOne({ email, username: { $ne: username } });
+        if (emailExists) return res.status(400).json({ message: "Email đã tồn tại" });
+
+        user.fullName = fullName;
+        user.email = email;
+        user.phone = phone;
+        user.updatedAt = new Date();
+
+        await user.save();
+        res.json({ message: "Cập nhật thông tin thành công" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error: " + err.message });
+    }
+});
+
+// ================== API ĐỔI MẬT KHẨU ==================
+app.post("/api/changePassword", async (req, res) => {
+    try {
+        const { username, newPassword } = req.body;
+
+        if (!username || !newPassword) return res.status(400).json({ message: "Thiếu thông tin đổi mật khẩu" });
+
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        user.updatedAt = new Date();
+
+        await user.save();
+        res.json({ message: "Đổi mật khẩu thành công" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error: " + err.message });
+    }
+});
+// ================== ảnh ==================
+app.post("/api/updateAvatar", async (req, res) => {
+    try {
+        console.log("Body nhận từ client:", req.body);
+
+        const { username, avatar } = req.body;
+        if (!username || !avatar) {
+            return res.status(400).json({ message: "Thiếu thông tin avatar" });
+        }
+
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: "Người dùng không tồn tại" });
+        }
+
+        console.log("Avatar nhận từ client (50 ký tự đầu):", avatar.substring(0, 50));
+
+        user.avatar = avatar;
+        user.updatedAt = new Date();
+        await user.save();
+
+        console.log("User sau khi cập nhật:", user);
+
+        res.json({ message: "Cập nhật avatar thành công", avatar: user.avatar });
+    } catch (err) {
+        console.error("Lỗi trong updateAvatar:", err);
+        res.status(500).json({ message: "Server error: " + err.message });
+    }
+});
+
+// ================= sự kiện =================
+
+
+// Lấy tất cả sự kiện
+app.get("/api/events", async (req, res) => {
+    try {
+        const events = await Event.find().sort({ createdAt: -1 });
+
+        res.json({
+            message: "Lấy danh sách sự kiện thành công",
+            count: events.length,
+            events
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi lấy sự kiện:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Tạo sự kiện (có startTime và endTime)
+app.post("/api/events", async (req, res) => {
+    try {
+        const { name, startTime, endTime, location, description } = req.body;
+
+        // Kiểm tra dữ liệu đầu vào
+        if (!name || !startTime || !endTime || !location) {
+            return res.status(400).json({ message: "Thiếu thông tin sự kiện" });
+        }
+
+        // Tạo mới sự kiện
+        const event = new Event({
+            name,
+            startTime: new Date(startTime), // chuyển về kiểu Date
+            endTime: new Date(endTime),
+            location,
+            description
+        });
+
+        await event.save();
+
+        res.json({
+            message: "✅ Tạo sự kiện thành công",
+            event
+        });
+    } catch (err) {
+        console.error("❌ Lỗi tạo sự kiện:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
+// Sửa sự kiện
+app.put("/api/events/:id", async (req, res) => {
+    try {
+        const { name, startTime, endTime, location, description } = req.body;
+
+        // Chuyển ISO string sang Date
+        const event = await Event.findByIdAndUpdate(
+            req.params.id,
+            {
+                name,
+                startTime: startTime ? new Date(startTime) : undefined,
+                endTime: endTime ? new Date(endTime) : undefined,
+                location,
+                description
+            },
+            { new: true } // trả về document mới cập nhật
+        );
+
+        if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+
+        res.json({ message: "Cập nhật sự kiện thành công", event });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
+// Xóa sự kiện
+app.delete("/api/events/:id", async (req, res) => {
+    try {
+        await Event.findByIdAndDelete(req.params.id);
+        res.json({ message: "Xóa sự kiện thành công" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// ================== REGISTRATION SCHEMA ==================
+const registrationSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+    eventId: { type: mongoose.Schema.Types.ObjectId, ref: "Event", required: true },
+    registeredAt: { type: Date, default: Date.now },
+    status: { type: String, default: "pending" } //"pending" hoặc "joined"
+});
+
+
+
+// Đăng ký tham gia sự kiện
+app.post("/api/registerEvent", async (req, res) => {
+    try {
+        const { username, eventId } = req.body;
+
+        if (!username || !eventId) {
+            return res.status(400).json({ message: "Thiếu username hoặc eventId" });
+        }
+
+        // Tìm user theo username
+        const user = await User.findOne({ username });
+        const event = await Event.findById(eventId);
+
+        if (!user || !event) {
+            return res.status(404).json({ message: "User hoặc Event không tồn tại" });
+        }
+
+        // Kiểm tra đã đăng ký chưa
+        const existing = await Registration.findOne({ userId: user._id, eventId });
+        if (existing) {
+            return res.status(400).json({ message: "Bạn đã đăng ký sự kiện này rồi" });
+        }
+
+        // Tạo đăng ký mới
+        const registration = new Registration({ userId: user._id, eventId });
+        await registration.save();
+
+        res.json({
+            message: "Đăng ký sự kiện thành công",
+            registration,
+            user: {
+                username: user.username,
+                fullName: user.fullName,
+                email: user.email,
+                phone: user.phone
+            },
+            event: {
+                name: event.name,
+                location: event.location,
+                startTime: event.startTime,
+                endTime: event.endTime
+            }
+        });
+    } catch (err) {
+        console.error("❌ Lỗi đăng ký sự kiện:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Lấy tất cả sự kiện đã đăng ký bởi tất cả user
+app.get("/api/allregisterEvent", async (req, res) => {
+    try {
+        // Lấy tất cả registrations và populate userId + eventId
+        const registrations = await Registration.find()
+            .populate("userId", "username fullName email phone")  // Thông tin user
+            .populate("eventId", "name location startTime endTime description"); // Thông tin sự kiện
+
+        res.json({
+            message: "Lấy tất cả sự kiện đã đăng ký thành công",
+            count: registrations.length,
+            registrations
+        });
+
+    } catch (err) {
+        console.error("❌ Lỗi khi lấy sự kiện đã đăng ký:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
+// Lấy sự kiện mà user đã đăng ký theo username
+app.get("/api/registerEvent/:username", async (req, res) => {
+    try {
+        const { username } = req.params;
+
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: "User không tồn tại" });
+
+        // Lấy tất cả registrations và populate userId + eventId
+        const registrations = await Registration.find({ userId: user._id })
+            .populate("userId", "username fullName email phone")  // Chỉ lấy 4 trường
+            .populate("eventId", "name location startTime endTime"); // Chỉ lấy 4 trường
+
+        res.json({
+            message: "Lấy danh sách registrations thành công",
+            registrations
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+//  chỉnh sửa đăng ký sự kiện
+app.post("/api/EditRegisterEvent", async (req, res) => {
+    try {
+        const { registrationId, userId, eventId } = req.body;
+
+        if (!registrationId) {
+            return res.status(400).json({ success: false, message: "registrationId là bắt buộc" });
+        }
+
+        const registration = await Registration.findById(registrationId);
+        if (!registration) {
+            return res.status(404).json({ success: false, message: "Không tìm thấy đăng ký" });
+        }
+
+        if (userId) registration.userId = mongoose.Types.ObjectId(userId);
+        if (eventId) registration.eventId = mongoose.Types.ObjectId(eventId);
+
+        await registration.save();
 
         return res.json({
             success: true,
-            message: "Đăng nhập thành công!",
-            token,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                phone: user.phone
-            }
+            message: "Chỉnh sửa đăng ký thành công",
+            registration
         });
 
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ message: "Lỗi server." });
+        res.status(500).json({ success: false, message: "Lỗi server" });
     }
 });
-//thông tin nhân viên
-app.get("/nhanvien", async (req, res) => {
+
+// Hủy đăng ký sự kiện
+app.post("/api/unregisterEvent", async (req, res) => {
     try {
-        const nhanvien = await User.find(); // hoặc NhanVien.find()
-        res.json(nhanvien);
+        const { userId, eventId } = req.body;
+
+        if (!userId || !eventId) {
+            return res.status(400).json({ message: "Thiếu userId hoặc eventId" });
+        }
+
+        // Kiểm tra user và event tồn tại
+        const userExists = await User.findById(userId);
+        const eventExists = await Event.findById(eventId);
+
+        if (!userExists || !eventExists) {
+            return res.status(404).json({ message: "User hoặc Event không tồn tại" });
+        }
+
+        // Xóa tất cả đăng ký trùng userId + eventId
+        const result = await Registration.deleteMany({
+            userId: new mongoose.Types.ObjectId(userId),
+            eventId: new mongoose.Types.ObjectId(eventId)
+        });
+
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ message: "Không tìm thấy đăng ký để hủy" });
+        }
+
+        res.json({ message: `Đã hủy ${result.deletedCount} đăng ký thành công` });
     } catch (err) {
-        res.status(500).json({ message: "Lỗi server" });
+        console.error(err);
+        res.status(500).json({ message: err.message });
     }
 });
-// API cập nhật thông tin nhân viên
-app.put("/api/updateNhanVien", async (req, res) => {
+
+// ================== PARTICIPANT SCHEMA ==================
+const participantSchema = new mongoose.Schema({
+    fullName: { type: String },
+    email: { type: String },
+    phone: { type: String },
+    eventName: { type: String },
+    startTime: { type: Date },
+    endTime: { type: Date },
+    createdAt: { type: Date, default: Date.now },
+    registeredBy: { type: String, default: "người đăng ký" },
+    status: { type: String, default: "pending" }
+});
+
+const Participant = mongoose.model("Participant", participantSchema);
+
+
+// ================== API THÊM PARTICIPANT VÀ TỰ ĐỘNG TẠO REGISTRATION ==================
+app.post("/api/addParticipant", async (req, res) => {
     try {
-        const { username, fullName, email, phone } = req.body;
+        const { fullName, email, phone, eventName, startTime, endTime, status } = req.body;
 
-        if (!username) {
-            return res.status(400).json({ message: "Thiếu username." });
+        if (!fullName || !email || !phone || !eventName) {
+            return res.status(400).json({ message: "Thiếu thông tin participant" });
         }
 
-        // Cập nhật thông tin, đồng thời set updatedAt
-        const updatedUser = await User.findOneAndUpdate(
-            { username },
-            {
-                fullName,
-                email,
-                phone,
-                updatedAt: new Date()
-            },
-            { new: true } // trả về bản ghi đã update
-        );
-
-        if (!updatedUser) {
-            return res.status(404).json({ message: "Nhân viên không tồn tại." });
+        const existingParticipant = await Participant.findOne({ email, eventName });
+        if (existingParticipant) {
+            return res.status(400).json({ message: "Đã tồn tại" });
         }
 
-        res.json({ message: "Cập nhật thông tin thành công!", user: updatedUser });
+        const newParticipant = new Participant({
+            fullName,
+            email,
+            phone,
+            eventName,
+            startTime: startTime ? new Date(startTime) : null,
+            endTime: endTime ? new Date(endTime) : null,
+            status: status || "pending",
+            registeredBy: "người đăng ký"
+        });
+        await newParticipant.save();
+        console.log("✅ Participant đã tạo:", newParticipant);
+
+        const user = await User.findOne({ fullName, email, phone });
+        const event = await Event.findOne({ name: eventName });
+
+        // Chỉ cập nhật status nếu tìm thấy user và event, không tạo thêm
+        if (user && event) {
+            const existingRegistration = await Registration.findOne({ userId: user._id, eventId: event._id });
+            if (existingRegistration) {
+                existingRegistration.status = status || "joined";
+                await existingRegistration.save();
+                console.log("✅ Cập nhật status Registration:", existingRegistration.status);
+            } else {
+                console.log("⚠️ Registration chưa tồn tại → không tạo thêm");
+            }
+        } else {
+            console.log("⚠️ Không tìm thấy user hoặc event → không tạo Registration");
+        }
+
+        // Trả về participant thành công mà không cần registration
+        res.status(201).json({
+            message: "✅ Thêm participant thành công",
+            participant: newParticipant,
+            userId: user ? user._id : null,
+            eventId: event ? event._id : null
+        });
 
     } catch (err) {
-        console.error("❌ Lỗi /api/updateNhanVien:", err);
-        res.status(500).json({ message: "Lỗi server." });
+        console.error("❌ Lỗi khi thêm participant:", err);
+        res.status(500).json({ message: err.message });
     }
 });
-// API đổi mật khẩu
-app.put("/api/changePassword", async (req, res) => {
-    try {
-        const { username, newPassword } = req.body;
 
-        if (!username || !newPassword) {
-            return res.status(400).json({ message: "Thiếu username hoặc mật khẩu mới." });
+
+
+
+
+
+
+
+// Lấy tất cả participants
+app.get("/api/participants", async (req, res) => {
+    try {
+        const participants = await Participant.find().sort({ createdAt: -1 });
+        res.json({
+            message: "Lấy danh sách participants thành công",
+            count: participants.length,
+            participants
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi lấy participants:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+// ================== API THÊM PARTICIPANT ==================
+
+app.post("/api/participants", async (req, res) => {
+    try {
+        const { fullName, email, phone, eventName, startTime, endTime, registeredBy } = req.body;
+
+        if (!fullName || !email || !phone || !eventName || !registeredBy) {
+            return res.status(400).json({ message: "Thiếu thông tin participant" });
         }
 
-        // Mã hóa mật khẩu mới
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        // 🔎 Kiểm tra trùng (dựa vào email + eventName hoặc phone + eventName)
+        const existing = await Participant.findOne({ email, eventName });
+        if (existing) {
+            return res.status(400).json({ message: "❌ Participant đã có trong danh sách" });
+        }
 
-        const updatedUser = await User.findOneAndUpdate(
-            { username },
-            {
-                password: hashedPassword,
-                updatedAt: new Date()
-            },
+        const newParticipant = new Participant({
+            fullName,
+            email,
+            phone,
+            eventName,
+            startTime: startTime ? new Date(startTime) : null,
+            endTime: endTime ? new Date(endTime) : null,
+            registeredBy
+        });
+
+        await newParticipant.save();
+
+        res.status(201).json({
+            message: "✅ Thêm participant thành công",
+            participant: newParticipant
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi thêm participant:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+
+// ================== API SỬA PARTICIPANT ==================
+app.put("/api/participants/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { fullName, email, phone, eventName, startTime, endTime, registeredBy } = req.body;
+
+        const updateFields = {};
+
+        if (fullName !== undefined) updateFields.fullName = fullName;
+        if (email !== undefined) updateFields.email = email;
+        if (phone !== undefined) updateFields.phone = phone;
+        if (eventName !== undefined) updateFields.eventName = eventName;
+        if (startTime !== undefined) updateFields.startTime = new Date(startTime);
+        if (endTime !== undefined) updateFields.endTime = new Date(endTime);
+        if (registeredBy !== undefined) updateFields.registeredBy = registeredBy;
+
+        const updatedParticipant = await Participant.findByIdAndUpdate(
+            id,
+            { $set: updateFields }, // chỉ set những field cần update
             { new: true }
         );
 
-        if (!updatedUser) {
-            return res.status(404).json({ message: "Nhân viên không tồn tại." });
+        if (!updatedParticipant) {
+            return res.status(404).json({ message: "❌ Không tìm thấy participant để sửa" });
         }
 
-        res.json({ message: "Đổi mật khẩu thành công!" });
-
+        res.json({
+            message: "✅ Cập nhật participant thành công",
+            participant: updatedParticipant
+        });
     } catch (err) {
-        console.error("❌ Lỗi /api/changePassword:", err);
-        res.status(500).json({ message: "Lỗi server." });
+        console.error("❌ Lỗi khi cập nhật participant:", err);
+        res.status(500).json({ message: err.message });
     }
 });
-const multer = require("multer");
-const upload = multer({ storage: multer.memoryStorage() }); // lưu tạm trong bộ nhớ
 
-app.post("/api/updateAvatar", upload.single("avatarFile"), async (req, res) => {
+
+// ================== API XÓA PARTICIPANT ==================
+app.delete("/api/participants/:id", async (req, res) => {
     try {
-        const { username } = req.body;
-        const file = req.file;
+        const { id } = req.params;
+        const deletedParticipant = await Participant.findByIdAndDelete(id);
 
-        if (!username || !file) {
-            return res.status(400).json({ message: "Thiếu username hoặc file." });
+        if (!deletedParticipant) {
+            return res.status(404).json({ message: "❌ Không tìm thấy participant để xóa" });
         }
 
-        // Chuyển file thành base64
-        const avatarBase64 = file.buffer.toString("base64");
-
-        const updatedUser = await User.findOneAndUpdate(
-            { username },
-            { avatar: avatarBase64, updatedAt: new Date() },
-            { new: true }
-        );
-
-        if (!updatedUser) {
-            return res.status(404).json({ message: "Nhân viên không tồn tại." });
-        }
-
-        res.json({ message: "Cập nhật avatar thành công!", avatar: updatedUser.avatar });
-
+        res.json({
+            message: "✅ Xóa participant thành công",
+            participant: deletedParticipant
+        });
     } catch (err) {
-        console.error("❌ Lỗi /api/updateAvatar:", err);
-        res.status(500).json({ message: "Lỗi server." });
+        console.error("❌ Lỗi khi xóa participant:", err);
+        res.status(500).json({ message: err.message });
     }
 });
 
 
-// Server chạy trên port 5000
-app.listen(5000, () => {
-    console.log("Server running on http://localhost:5000");
+// ================== API THỐNG KÊ NGƯỜI THAM GIA ==================
+app.get("/api/statistics", async (req, res) => {
+    try {
+        const result = await Participant.aggregate([
+            // Nhóm theo tên sự kiện và đếm số người tham gia
+            { $group: { _id: "$eventName", count: { $sum: 1 } } },
+            // Sắp xếp theo tên sự kiện (bảng chữ cái A → Z)
+            { $sort: { _id: 1 } }
+        ]);
+
+        res.json({
+            message: "✅ Lấy thống kê thành công",
+            statistics: result.map(r => ({
+                eventName: r._id,
+                count: r.count
+            }))
+        });
+    } catch (err) {
+        console.error("❌ Lỗi khi thống kê:", err);
+        res.status(500).json({ message: err.message });
+    }
 });
+
+// ================== Gửi Gmail thật ==================
+
+const cron = require("node-cron");
+const nodemailer = require("nodemailer");
+
+
+// ⚙️ Cấu hình SMTP Gmail (App Password)
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true, // true cho SSL
+    auth: {
+        user: "githich462@gmail.com",
+        pass: "trolcngpoarwpqgc", // 
+    },
+});
+
+// ✅ Kiểm tra cấu hình Gmail có hoạt động không
+transporter.verify((error, success) => {
+    if (error) {
+        console.error("❌ Lỗi cấu hình Gmail:", error);
+    } else {
+        console.log("✅ Gmail SMTP sẵn sàng để gửi email!");
+    }
+});
+
+// 🕒 Cron job: chạy mỗi 10 phút
+cron.schedule("*/10 * * * *", async () => {
+    console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
+
+    const now = new Date();
+    const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+    try {
+        // 🔹 Lấy danh sách đăng ký + thông tin user + event
+        const registrations = await Registration.find()
+            .populate("eventId")
+            .populate("userId");
+
+        for (const reg of registrations) {
+            if (!reg.eventId || !reg.userId) continue;
+
+            const startTime = new Date(reg.eventId.startTime);
+
+            // Kiểm tra sự kiện sắp bắt đầu trong 2 tiếng và chưa gửi email
+            if (startTime > now && startTime <= twoHoursLater && !reg.emailSent) {
+                const formattedTime = startTime.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+
+                const mailOptions = {
+                    from: '"Ban tổ chức sự kiện" <githich462@gmail.com>',
+                    to: reg.userId.email,
+                    subject: `📢 Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
+                    text: `Xin chào ${reg.userId.fullName},\n\nSự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.\nĐịa điểm: ${reg.eventId.location || "chưa cập nhật"}.\n\nHẹn gặp bạn tại sự kiện!\n\nTrân trọng,\nBan tổ chức.`,
+                };
+
+                try {
+                    await transporter.sendMail(mailOptions);
+                    console.log(`✅ Đã gửi email đến ${reg.userId.email}`);
+
+                    reg.emailSent = true;
+                    await reg.save();
+                } catch (sendErr) {
+                    console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, sendErr);
+                }
+            }
+        }
+    } catch (err) {
+        console.error("❌ Lỗi kiểm tra sự kiện:", err);
+    }
+});
+
+// ================== START SERVER ==================
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+    console.log(`✅ Server running on http://localhost:${PORT}`);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
