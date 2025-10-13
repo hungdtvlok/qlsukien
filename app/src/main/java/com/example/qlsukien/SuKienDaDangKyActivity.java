@@ -86,11 +86,13 @@ public class SuKienDaDangKyActivity extends AppCompatActivity {
 
                                 String status = obj.optString("status", "joined");
 
+                                String location = obj.optString("location", "");
+
                                 // Tạo đối tượng và thêm vào danh sách
                                 SuKienDaDangKy sk = new SuKienDaDangKy(
                                         userId,username, fullName, email, phone,
                                         eventId, eventName, startTime, endTime,
-                                        createdAt,status
+                                        createdAt,status, location
                                 );
                                 suKienList.add(sk);
                             }

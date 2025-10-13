@@ -21,6 +21,9 @@ import org.json.JSONObject;
 import java.util.List;
 import android.util.Log;
 import org.json.JSONException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class SuKienDaDangKyAdapter extends RecyclerView.Adapter<SuKienDaDangKyAdapter.ViewHolder> {
 
@@ -53,6 +56,9 @@ public class SuKienDaDangKyAdapter extends RecyclerView.Adapter<SuKienDaDangKyAd
         holder.tvStartTime.setText("Bắt đầu: " + SuKienDaDangKyActivity.formatDateForSearch(item.getStartTime()));
         holder.tvEndTime.setText("Kết thúc: " + SuKienDaDangKyActivity.formatDateForSearch(item.getEndTime()));
         holder.tvCreatedAt.setText("Đăng ký lúc: " + SuKienDaDangKyActivity.formatDateForSearch(item.getCreatedAt()));
+
+        // Gọi gửi email nếu trước 2 tiếng
+        sendEmailIfBefore2Hours(item);
 
         // ✅ Ẩn nút HỦY nếu status = "joined"
         if ("joined".equalsIgnoreCase(item.getStatus())) {
@@ -140,6 +146,51 @@ public class SuKienDaDangKyAdapter extends RecyclerView.Adapter<SuKienDaDangKyAd
 
         queue.add(request);
     }
+    // hàm gửi về gmail
+    private void sendEmailIfBefore2Hours(SuKienDaDangKy registration) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            Date startDate = sdf.parse(registration.getStartTime());
+            Date now = new Date();
+            long diff = startDate.getTime() - now.getTime();
+
+            // Chỉ gửi nếu trước 2 tiếng và chưa gửi
+            if (diff > 0 && diff <= 2 * 60 * 60 * 1000 && !registration.isEmailSent()) {
+                sendEmailToUser(
+                        registration.getEmail(),
+                        registration.getEventName(),
+                        registration.getStartTime(),
+                        registration.getLocation()
+                );
+
+                // Có thể set flag để tránh gửi lại
+                registration.setEmailSent(true);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendEmailToUser(String email, String eventName, String startTime, String location) {
+        String url = "https://qlsukien-1.onrender.com/api/sendReminderEmail";
+        JSONObject body = new JSONObject();
+        try {
+            body.put("email", email);
+            body.put("eventName", eventName);
+            body.put("startTime", startTime);
+            body.put("location", location);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest request = new JsonObjectRequest(Request.Method.POST, url, body,
+                response -> Log.d("Email", "Gửi email thành công: " + email),
+                error -> Log.e("Email", "Gửi email thất bại: " + email)
+        );
+
+        Volley.newRequestQueue(context).add(request);
+    }
+
 
 
 
