@@ -76,7 +76,7 @@ app.post("/api/register", async (req, res) => {
         const existingUser = await User.findOne({ $or: [{ username }, { email }] });
         if (existingUser) {
             const field = existingUser.username === username ? "Username" : "Email";
-            return res.status(400).json({ message: "Tài khoản hoặc email đã tồn tại" });
+            return res.status(400).json({ message: "Tài đăng nhập hoặc email đã tồn tại" });
         }
 
         // Hash password
@@ -796,4 +796,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
