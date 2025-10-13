@@ -343,7 +343,8 @@ const registrationSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     eventId: { type: mongoose.Schema.Types.ObjectId, ref: "Event", required: true },
     registeredAt: { type: Date, default: Date.now },
-    status: { type: String, default: "pending" } //"pending" hoặc "joined"
+    status: { type: String, default: "pending" } //"pending" hoặc "joined",
+    emailSent: { type: Boolean, default: false } 
 });
 
 const Registration = mongoose.model("Registration", registrationSchema);
@@ -797,6 +798,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
