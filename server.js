@@ -346,6 +346,7 @@ const registrationSchema = new mongoose.Schema({
     status: { type: String, default: "pending" } //"pending" hoặc "joined"
 });
 
+const Registration = mongoose.model("Registration", registrationSchema);
 
 
 // Đăng ký tham gia sự kiện
@@ -796,5 +797,6 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
