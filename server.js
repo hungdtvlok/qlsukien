@@ -746,7 +746,7 @@ transporter.verify((error, success) => {
 
 // ===== Hàm gửi email =====
 async function sendEmail(reg, startTimeVN) {
-    const formattedTime = startTimeVN.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+    const formattedTime = startTimeVN.toLocaleString(DateTime.DATETIME_FULL);
 
     const mailOptions = {
         from: '"Ban tổ chức sự kiện" <githich462@gmail.com>',
@@ -765,13 +765,12 @@ async function sendEmail(reg, startTimeVN) {
     }
 }
 
-// ===== Cron job chạy mỗi phút =====
+// ===== Cron job: kiểm tra mỗi phút =====
 cron.schedule("* * * * *", async () => {
     console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
 
-    // Giờ hiện tại VN
-    const nowVN = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
-    const twoHoursLaterVN = new Date(nowVN.getTime() + 2 * 60 * 60 * 1000);
+    const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
+    const twoHoursLaterVN = nowVN.plus({ hours: 2 });
 
     try {
         const registrations = await Registration.find()
@@ -781,11 +780,9 @@ cron.schedule("* * * * *", async () => {
         for (const reg of registrations) {
             if (!reg.eventId || !reg.userId) continue;
 
-            // Chuyển giờ sự kiện sang VN
-            const startTimeVN = new Date(new Date(reg.eventId.startTime).getTime() + 7 * 60 * 60 * 1000);
+            const startTimeVN = DateTime.fromISO(reg.eventId.startTime, { zone: "Asia/Ho_Chi_Minh" });
 
-            // Debug log
-            console.log(`NowVN: ${nowVN}, StartTimeVN: ${startTimeVN}, EmailSent: ${reg.emailSent}`);
+            console.log(`NowVN: ${nowVN.toString()}, StartTimeVN: ${startTimeVN.toString()}, EmailSent: ${reg.emailSent}`);
 
             if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
                 await sendEmail(reg, startTimeVN);
@@ -796,10 +793,10 @@ cron.schedule("* * * * *", async () => {
     }
 });
 
-// ===== Endpoint trigger gửi email từ Android =====
+// ===== Endpoint trigger từ Android =====
 app.post("/api/sendReminderEmail", async (req, res) => {
-    const nowVN = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
-    const twoHoursLaterVN = new Date(nowVN.getTime() + 2 * 60 * 60 * 1000);
+    const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
+    const twoHoursLaterVN = nowVN.plus({ hours: 2 });
 
     try {
         const registrations = await Registration.find()
@@ -811,9 +808,9 @@ app.post("/api/sendReminderEmail", async (req, res) => {
         for (const reg of registrations) {
             if (!reg.eventId || !reg.userId) continue;
 
-            const startTimeVN = new Date(new Date(reg.eventId.startTime).getTime() + 7 * 60 * 60 * 1000);
+            const startTimeVN = DateTime.fromISO(reg.eventId.startTime, { zone: "Asia/Ho_Chi_Minh" });
 
-            console.log(`NowVN: ${nowVN}, StartTimeVN: ${startTimeVN}, EmailSent: ${reg.emailSent}`);
+            console.log(`NowVN: ${nowVN.toString()}, StartTimeVN: ${startTimeVN.toString()}, EmailSent: ${reg.emailSent}`);
 
             if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
                 await sendEmail(reg, startTimeVN);
@@ -834,6 +831,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
