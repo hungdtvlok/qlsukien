@@ -728,35 +728,52 @@ const cron = require("node-cron");
 const nodemailer = require("nodemailer");
 
 
-// ⚙️ Cấu hình SMTP Gmail (App Password)
+// ===== Cấu hình Gmail SMTP =====
 const transporter = nodemailer.createTransport({
     host: "smtp.gmail.com",
     port: 465,
-    secure: true, // true cho SSL
+    secure: true,
     auth: {
         user: "githich462@gmail.com",
-        pass: "trolcngpoarwpqgc", // 
+        pass: "trolcngpoarwpqgc", // App Password
     },
 });
 
-// ✅ Kiểm tra cấu hình Gmail có hoạt động không
 transporter.verify((error, success) => {
-    if (error) {
-        console.error("❌ Lỗi cấu hình Gmail:", error);
-    } else {
-        console.log("✅ Gmail SMTP sẵn sàng để gửi email!");
-    }
+    if (error) console.error("❌ Lỗi cấu hình Gmail:", error);
+    else console.log("✅ Gmail SMTP sẵn sàng để gửi email!");
 });
 
-// 🕒 Cron job: chạy mỗi phút
+// ===== Hàm gửi email =====
+async function sendEmail(reg, startTimeVN) {
+    const formattedTime = startTimeVN.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+
+    const mailOptions = {
+        from: '"Ban tổ chức sự kiện" <githich462@gmail.com>',
+        to: reg.userId.email,
+        subject: `📢 Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
+        text: `Xin chào ${reg.userId.fullName},\n\nSự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.\nĐịa điểm: ${reg.eventId.location || "chưa cập nhật"}.\n\nHẹn gặp bạn tại sự kiện!\n\nTrân trọng,\nBan tổ chức.`,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Đã gửi email đến ${reg.userId.email}`);
+        reg.emailSent = true;
+        await reg.save();
+    } catch (err) {
+        console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, err);
+    }
+}
+
+// ===== Cron job chạy mỗi phút =====
 cron.schedule("* * * * *", async () => {
     console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
 
-    const now = new Date();
-    const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    // Giờ hiện tại VN
+    const nowVN = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+    const twoHoursLaterVN = new Date(nowVN.getTime() + 2 * 60 * 60 * 1000);
 
     try {
-        // 🔹 Lấy danh sách đăng ký + thông tin user + event
         const registrations = await Registration.find()
             .populate("eventId")
             .populate("userId");
@@ -764,28 +781,14 @@ cron.schedule("* * * * *", async () => {
         for (const reg of registrations) {
             if (!reg.eventId || !reg.userId) continue;
 
-            const startTime = new Date(reg.eventId.startTime);
+            // Chuyển giờ sự kiện sang VN
+            const startTimeVN = new Date(new Date(reg.eventId.startTime).getTime() + 7 * 60 * 60 * 1000);
 
-            // Kiểm tra sự kiện sắp bắt đầu trong 2 tiếng và chưa gửi email
-            if (startTime > now && startTime <= twoHoursLater && !reg.emailSent) {
-                const formattedTime = startTime.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
+            // Debug log
+            console.log(`NowVN: ${nowVN}, StartTimeVN: ${startTimeVN}, EmailSent: ${reg.emailSent}`);
 
-                const mailOptions = {
-                    from: '"Ban tổ chức sự kiện" <githich462@gmail.com>',
-                    to: reg.userId.email,
-                    subject: `📢 Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
-                    text: `Xin chào ${reg.userId.fullName},\n\nSự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.\nĐịa điểm: ${reg.eventId.location || "chưa cập nhật"}.\n\nHẹn gặp bạn tại sự kiện!\n\nTrân trọng,\nBan tổ chức.`,
-                };
-
-                try {
-                    await transporter.sendMail(mailOptions);
-                    console.log(`✅ Đã gửi email đến ${reg.userId.email}`);
-
-                    reg.emailSent = true;
-                    await reg.save();
-                } catch (sendErr) {
-                    console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, sendErr);
-                }
+            if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
+                await sendEmail(reg, startTimeVN);
             }
         }
     } catch (err) {
@@ -793,12 +796,12 @@ cron.schedule("* * * * *", async () => {
     }
 });
 
+// ===== Endpoint trigger gửi email từ Android =====
 app.post("/api/sendReminderEmail", async (req, res) => {
-    try {
-        // Giờ hiện tại theo VN
-        const nowVN = new Date(new Date().getTime() + 7 * 60 * 60 * 1000); //giờ hiện tại theo VN
-        const twoHoursLaterVN = new Date(nowVN.getTime() + 2 * 60 * 60 * 1000); //2 tiếng sau giờ hiện tại theo VN
+    const nowVN = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+    const twoHoursLaterVN = new Date(nowVN.getTime() + 2 * 60 * 60 * 1000);
 
+    try {
         const registrations = await Registration.find()
             .populate("eventId")
             .populate("userId");
@@ -808,31 +811,13 @@ app.post("/api/sendReminderEmail", async (req, res) => {
         for (const reg of registrations) {
             if (!reg.eventId || !reg.userId) continue;
 
-            // Chuyển giờ sự kiện sang giờ VN
-            const startTimeVN = new Date(new Date(reg.eventId.startTime).getTime() + 7 * 60 * 60 * 1000); //giờ bắt đầu sự kiện theo VN
+            const startTimeVN = new Date(new Date(reg.eventId.startTime).getTime() + 7 * 60 * 60 * 1000);
 
-            // Kiểm tra sự kiện sắp bắt đầu trong 2 tiếng và chưa gửi email
+            console.log(`NowVN: ${nowVN}, StartTimeVN: ${startTimeVN}, EmailSent: ${reg.emailSent}`);
+
             if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
-                const formattedTime = startTimeVN.toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
-
-                const mailOptions = {
-                    from: '"Ban tổ chức sự kiện" <githich462@gmail.com>',
-                    to: reg.userId.email,
-                    subject: `📢 Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
-                    text: `Xin chào ${reg.userId.fullName},\n\nSự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.\nĐịa điểm: ${reg.eventId.location || "chưa cập nhật"}.\n\nHẹn gặp bạn tại sự kiện!\n\nTrân trọng,\nBan tổ chức.`,
-                };
-
-                try {
-                    await transporter.sendMail(mailOptions);
-                    console.log(`✅ Đã gửi email đến ${reg.userId.email}`);
-
-                    // Cập nhật flag email đã gửi
-                    reg.emailSent = true;
-                    await reg.save();
-                    sentCount++;
-                } catch (sendErr) {
-                    console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, sendErr);
-                }
+                await sendEmail(reg, startTimeVN);
+                sentCount++;
             }
         }
 
@@ -849,6 +834,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
