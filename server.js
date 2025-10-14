@@ -785,9 +785,9 @@ cron.schedule("* * * * *", async () => {
         for (const reg of registrations) {
             if (!reg.eventId || !reg.userId) continue;
 
-            const startTimeVN = DateTime.fromISO(reg.eventId.startTime, { zone: "Asia/Ho_Chi_Minh" });
+            // Sửa ở đây:
+            const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
 
-            // Log chi tiết: tên sự kiện, email, trạng thái ngày giờ
             if (!startTimeVN.isValid) {
                 console.log(`NowVN: ${nowVN.toISO()}, StartTimeVN: Ngày giờ không hợp lệ, Tên: ${reg.eventId.name}, Email: ${reg.userId.email}, EmailSent: ${reg.emailSent}`);
                 continue;
@@ -808,11 +808,13 @@ cron.schedule("* * * * *", async () => {
 
 
 
+
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
