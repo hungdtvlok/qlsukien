@@ -726,22 +726,11 @@ app.get("/api/statistics", async (req, res) => {
 
 // ================== Gửi Gmail thật ==================
 
+// ================== Gửi Gmail thật ==================
 const cron = require("node-cron");
-const nodemailer = require("nodemailer");
-
 const { DateTime } = require("luxon");
 
-// ===== Cấu hình Gmail SMTP =====
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-        user: "githich462@gmail.com",
-        pass: "trolcngpoarwpqgc", // App Password
-    },
-});
-
+// Kiểm tra cấu hình Gmail
 transporter.verify((error, success) => {
     if (error) console.error("❌ Lỗi cấu hình Gmail:", error);
     else console.log("✅ Gmail SMTP sẵn sàng để gửi email!");
@@ -760,11 +749,11 @@ async function sendEmail(reg, startTimeVN) {
 
     try {
         await transporter.sendMail(mailOptions);
-        console.log(`✅ Đã gửi email đến ${reg.userId.email}`);
+        console.log(`✅ Đã gửi email đến ${reg.userId.email} cho sự kiện "${reg.eventId.name}"`);
         reg.emailSent = true;
         await reg.save();
     } catch (err) {
-        console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, err);
+        console.error(`❌ Gửi email lỗi cho ${reg.userId.email} (${reg.eventId.name}):`, err);
     }
 }
 
@@ -785,7 +774,13 @@ cron.schedule("* * * * *", async () => {
 
             const startTimeVN = DateTime.fromISO(reg.eventId.startTime, { zone: "Asia/Ho_Chi_Minh" });
 
-            console.log(`NowVN: ${nowVN.toString()}, StartTimeVN: ${startTimeVN.toString()}, EmailSent: ${reg.emailSent}`);
+            // Log chi tiết: tên sự kiện, email, trạng thái ngày giờ
+            if (!startTimeVN.isValid) {
+                console.log(`NowVN: ${nowVN.toISO()}, StartTimeVN: Ngày giờ không hợp lệ, Tên: ${reg.eventId.name}, Email: ${reg.userId.email}, EmailSent: ${reg.emailSent}`);
+                continue;
+            } else {
+                console.log(`NowVN: ${nowVN.toISO()}, StartTimeVN: ${startTimeVN.toISO()}, Tên: ${reg.eventId.name}, Email: ${reg.userId.email}, EmailSent: ${reg.emailSent}`);
+            }
 
             if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
                 await sendEmail(reg, startTimeVN);
@@ -796,37 +791,8 @@ cron.schedule("* * * * *", async () => {
     }
 });
 
-// ===== Endpoint trigger từ Android =====
-app.post("/api/sendReminderEmail", async (req, res) => {
-    const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
-    const twoHoursLaterVN = nowVN.plus({ hours: 2 });
 
-    try {
-        const registrations = await Registration.find()
-            .populate("eventId")
-            .populate("userId");
 
-        let sentCount = 0;
-
-        for (const reg of registrations) {
-            if (!reg.eventId || !reg.userId) continue;
-
-            const startTimeVN = DateTime.fromISO(reg.eventId.startTime, { zone: "Asia/Ho_Chi_Minh" });
-
-            console.log(`NowVN: ${nowVN.toString()}, StartTimeVN: ${startTimeVN.toString()}, EmailSent: ${reg.emailSent}`);
-
-            if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
-                await sendEmail(reg, startTimeVN);
-                sentCount++;
-            }
-        }
-
-        res.json({ message: `Đã gửi ${sentCount} email nhắc nhở` });
-    } catch (err) {
-        console.error("❌ Lỗi khi gửi email nhắc nhở:", err);
-        res.status(500).json({ message: err.message });
-    }
-});
 
 
 // ================== START SERVER ==================
@@ -834,6 +800,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
