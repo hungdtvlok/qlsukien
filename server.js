@@ -27,8 +27,6 @@ const JWT_SECRET = "secret123";
 
 
 
-
-
 // ================== MONGO DB CONNECTION ==================
 mongoose.connect(
     "mongodb+srv://bdx:123456789%40@cluster0.xmmbfgf.mongodb.net/qlsukien?retryWrites=true&w=majority&appName=Cluster0",
@@ -726,36 +724,58 @@ app.get("/api/statistics", async (req, res) => {
 
 // ================== Gửi Gmail thật ==================
 
-
 const cron = require("node-cron");
+const nodemailer = require("nodemailer");
+
 const { DateTime } = require("luxon");
-const sgMail = require("@sendgrid/mail");
 
-// Set API Key SendGrid từ biến môi trường
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// ===== Cấu hình Gmail SMTP =====
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+        user: "githich462@gmail.com",
+        pass: "aqzzbtyfarsgaesd", // App Password
+    },
+});
 
-// Hàm gửi email bằng SendGrid
+transporter.verify((error, success) => {
+    if (error) console.error("❌ Lỗi cấu hình Gmail:", error);
+    else console.log("✅ Gmail SMTP sẵn sàng để gửi email!");
+});
+
+// ===== Hàm gửi email =====
 async function sendEmail(reg, startTimeVN) {
-    const formattedTime = startTimeVN.toLocaleString(DateTime.DATETIME_FULL);
+    const formattedTime = startTimeVN.toFormat("dd/MM/yyyy 'lúc' HH:mm");
 
-    const msg = {
+    const mailOptions = {
+        from: '"Ban tổ chức sự kiện" <githich462@gmail.com>',
         to: reg.userId.email,
-        from: process.env.FROM_EMAIL, // email đã verify SendGrid
         subject: `📢 Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
-        text: `Xin chào ${reg.userId.fullName},\n\nSự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.\nĐịa điểm: ${reg.eventId.location || "chưa cập nhật"}.\n\nHẹn gặp bạn tại sự kiện!\n\nTrân trọng,\nBan tổ chức.`
+        text: `Xin chào ${reg.userId.fullName},
+
+Sự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.
+Địa điểm: ${reg.eventId.location || "chưa cập nhật"}.
+
+Hẹn gặp bạn tại sự kiện!
+
+Trân trọng,
+Ban tổ chức.`
     };
 
     try {
-        await sgMail.send(msg);
-        console.log(`✅ Đã gửi email đến ${reg.userId.email} cho sự kiện "${reg.eventId.name}"`);
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Đã gửi email đến ${reg.userId.email}`);
         reg.emailSent = true;
         await reg.save();
     } catch (err) {
-        console.error(`❌ Gửi email lỗi cho ${reg.userId.email} (${reg.eventId.name}):`, err);
+        console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, err);
     }
 }
 
-// Cron job chạy mỗi phút
+
+// ===== Cron job: kiểm tra mỗi phút =====
 cron.schedule("* * * * *", async () => {
     console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
 
@@ -767,37 +787,30 @@ cron.schedule("* * * * *", async () => {
             .populate("eventId")
             .populate("userId");
 
-        // Debug danh sách registrations
-        console.log("🔹 Registrations:", registrations.map(r => ({
-            event: r.eventId?.name,
-            startTimeRaw: r.eventId?.startTime,
-            email: r.userId?.email,
-            emailSent: r.emailSent
-        })));
-
         for (const reg of registrations) {
             if (!reg.eventId || !reg.userId) continue;
 
-            // Parse startTime từ MongoDB
-            const startTimeVN = DateTime.fromISO(reg.eventId.startTime.toISOString())
-                .setZone("Asia/Ho_Chi_Minh");
+            // Chuyển Date object sang DateTime
+            const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
 
-            // Nếu ngày giờ không hợp lệ
-            if (!startTimeVN.isValid) {
-                console.log(`⚠️ Event: ${reg.eventId.name}, StartTimeRaw: ${reg.eventId.startTime}, Valid: ${startTimeVN.isValid}, EmailSent: ${reg.emailSent}`);
-                continue;
-            }
+            console.log(
+                `🔹 User: ${reg.userId.username}, Event: ${reg.eventId.name}\n` +
+                `   NowVN: ${nowVN.toString()}\n` +
+                `   StartTimeVN: ${startTimeVN.toString()}\n` +
+                `   EmailSent: ${reg.emailSent}`
+            );
 
-            // Gửi email nếu sự kiện trong 2h tới và chưa gửi
             if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
+                console.log(`➡️ Gửi email nhắc nhở cho ${reg.userId.username}`);
                 await sendEmail(reg, startTimeVN);
             }
         }
-
     } catch (err) {
         console.error("❌ Lỗi kiểm tra sự kiện:", err);
     }
 });
+
+
 
 
 // ================== START SERVER ==================
@@ -805,11 +818,6 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
-
-
-
-
-
 
 
 
