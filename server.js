@@ -726,9 +726,22 @@ app.get("/api/statistics", async (req, res) => {
 
 // ================== Gửi Gmail thật ==================
 
-// ================== Gửi Gmail thật ==================
+
 const cron = require("node-cron");
 const { DateTime } = require("luxon");
+
+const nodemailer = require("nodemailer");
+
+// ===== Khai báo transporter =====
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false, // true nếu dùng port 465
+    auth: {
+        user: "githich462@gmail.com",
+        pass: "MẬT_KHẨU_APP" // password hoặc App Password của Gmail
+    }
+});
 
 // Kiểm tra cấu hình Gmail
 transporter.verify((error, success) => {
@@ -800,6 +813,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
