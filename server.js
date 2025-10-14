@@ -726,23 +726,23 @@ app.get("/api/statistics", async (req, res) => {
 
 // ================== Gửi Gmail thật ==================
 
-const sgMail = require("@sendgrid/mail");
+
 const cron = require("node-cron");
 const { DateTime } = require("luxon");
+const sgMail = require("@sendgrid/mail");
 
-// ===== Setup SendGrid =====
+// Set API Key SendGrid từ biến môi trường
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-const FROM_EMAIL = process.env.FROM_EMAIL;
 
-// ===== Hàm gửi email =====
+// Hàm gửi email bằng SendGrid
 async function sendEmail(reg, startTimeVN) {
     const formattedTime = startTimeVN.toLocaleString(DateTime.DATETIME_FULL);
 
     const msg = {
-        to: reg.userId.email, // email người nhận
-        from: FROM_EMAIL,     // email đã verify trên SendGrid
+        to: reg.userId.email,
+        from: process.env.FROM_EMAIL, // email đã verify SendGrid
         subject: `📢 Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
-        text: `Xin chào ${reg.userId.fullName || "Bạn"},\n\nSự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.\nĐịa điểm: ${reg.eventId.location || "chưa cập nhật"}.\n\nHẹn gặp bạn tại sự kiện!\n\nTrân trọng,\nBan tổ chức.`,
+        text: `Xin chào ${reg.userId.fullName},\n\nSự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.\nĐịa điểm: ${reg.eventId.location || "chưa cập nhật"}.\n\nHẹn gặp bạn tại sự kiện!\n\nTrân trọng,\nBan tổ chức.`
     };
 
     try {
@@ -751,11 +751,11 @@ async function sendEmail(reg, startTimeVN) {
         reg.emailSent = true;
         await reg.save();
     } catch (err) {
-        console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, err);
+        console.error(`❌ Gửi email lỗi cho ${reg.userId.email} (${reg.eventId.name}):`, err);
     }
 }
 
-// ===== Cron job: kiểm tra mỗi phút =====
+// Cron job chạy mỗi phút
 cron.schedule("* * * * *", async () => {
     console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
 
@@ -767,14 +767,24 @@ cron.schedule("* * * * *", async () => {
             .populate("eventId")
             .populate("userId");
 
+        // Debug danh sách registrations
+        console.log("🔹 Registrations:", registrations.map(r => ({
+            event: r.eventId?.name,
+            startTimeRaw: r.eventId?.startTime,
+            email: r.userId?.email,
+            emailSent: r.emailSent
+        })));
+
         for (const reg of registrations) {
             if (!reg.eventId || !reg.userId) continue;
 
-            const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
+            // Parse startTime từ MongoDB
+            const startTimeVN = DateTime.fromISO(reg.eventId.startTime.toISOString())
+                .setZone("Asia/Ho_Chi_Minh");
 
-            // Kiểm tra valid date
+            // Nếu ngày giờ không hợp lệ
             if (!startTimeVN.isValid) {
-                console.log(`⚠️ Ngày giờ không hợp lệ, Tên: ${reg.eventId.name}, Email: ${reg.userId.email}`);
+                console.log(`⚠️ Event: ${reg.eventId.name}, StartTimeRaw: ${reg.eventId.startTime}, Valid: ${startTimeVN.isValid}, EmailSent: ${reg.emailSent}`);
                 continue;
             }
 
@@ -783,15 +793,11 @@ cron.schedule("* * * * *", async () => {
                 await sendEmail(reg, startTimeVN);
             }
         }
+
     } catch (err) {
         console.error("❌ Lỗi kiểm tra sự kiện:", err);
     }
 });
-
-
-
-
-
 
 
 // ================== START SERVER ==================
@@ -799,6 +805,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
