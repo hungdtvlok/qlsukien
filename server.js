@@ -726,47 +726,32 @@ app.get("/api/statistics", async (req, res) => {
 
 // ================== Gửi Gmail thật ==================
 
-
+const sgMail = require("@sendgrid/mail");
 const cron = require("node-cron");
 const { DateTime } = require("luxon");
 
-const nodemailer = require("nodemailer");
-
-// ===== Khai báo transporter =====
-const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false, // true nếu dùng port 465
-    auth: {
-        user: "githich462@gmail.com",
-        pass: "MẬT_KHẨU_APP" // password hoặc App Password của Gmail
-    }
-});
-
-// Kiểm tra cấu hình Gmail
-transporter.verify((error, success) => {
-    if (error) console.error("❌ Lỗi cấu hình Gmail:", error);
-    else console.log("✅ Gmail SMTP sẵn sàng để gửi email!");
-});
+// ===== Setup SendGrid =====
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+const FROM_EMAIL = process.env.FROM_EMAIL;
 
 // ===== Hàm gửi email =====
 async function sendEmail(reg, startTimeVN) {
     const formattedTime = startTimeVN.toLocaleString(DateTime.DATETIME_FULL);
 
-    const mailOptions = {
-        from: '"Ban tổ chức sự kiện" <githich462@gmail.com>',
-        to: reg.userId.email,
+    const msg = {
+        to: reg.userId.email, // email người nhận
+        from: FROM_EMAIL,     // email đã verify trên SendGrid
         subject: `📢 Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
-        text: `Xin chào ${reg.userId.fullName},\n\nSự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.\nĐịa điểm: ${reg.eventId.location || "chưa cập nhật"}.\n\nHẹn gặp bạn tại sự kiện!\n\nTrân trọng,\nBan tổ chức.`,
+        text: `Xin chào ${reg.userId.fullName || "Bạn"},\n\nSự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.\nĐịa điểm: ${reg.eventId.location || "chưa cập nhật"}.\n\nHẹn gặp bạn tại sự kiện!\n\nTrân trọng,\nBan tổ chức.`,
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        await sgMail.send(msg);
         console.log(`✅ Đã gửi email đến ${reg.userId.email} cho sự kiện "${reg.eventId.name}"`);
         reg.emailSent = true;
         await reg.save();
     } catch (err) {
-        console.error(`❌ Gửi email lỗi cho ${reg.userId.email} (${reg.eventId.name}):`, err);
+        console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, err);
     }
 }
 
@@ -785,16 +770,15 @@ cron.schedule("* * * * *", async () => {
         for (const reg of registrations) {
             if (!reg.eventId || !reg.userId) continue;
 
-            // Sửa ở đây:
             const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
 
+            // Kiểm tra valid date
             if (!startTimeVN.isValid) {
-                console.log(`NowVN: ${nowVN.toISO()}, StartTimeVN: Ngày giờ không hợp lệ, Tên: ${reg.eventId.name}, Email: ${reg.userId.email}, EmailSent: ${reg.emailSent}`);
+                console.log(`⚠️ Ngày giờ không hợp lệ, Tên: ${reg.eventId.name}, Email: ${reg.userId.email}`);
                 continue;
-            } else {
-                console.log(`NowVN: ${nowVN.toISO()}, StartTimeVN: ${startTimeVN.toISO()}, Tên: ${reg.eventId.name}, Email: ${reg.userId.email}, EmailSent: ${reg.emailSent}`);
             }
 
+            // Gửi email nếu sự kiện trong 2h tới và chưa gửi
             if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
                 await sendEmail(reg, startTimeVN);
             }
@@ -809,11 +793,13 @@ cron.schedule("* * * * *", async () => {
 
 
 
+
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
