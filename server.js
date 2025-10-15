@@ -776,39 +776,57 @@ Ban tổ chức.`
 
 
 // ===== Cron job: kiểm tra mỗi phút =====
+// ===== Cron job: kiểm tra mỗi phút =====
 cron.schedule("* * * * *", async () => {
-    console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
+  console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
 
-    const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
-    const twoHoursLaterVN = nowVN.plus({ hours: 2 });
+  const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
+  const twoHoursLaterVN = nowVN.plus({ hours: 2 });
 
-    try {
-        const registrations = await Registration.find()
-            .populate("eventId")
-            .populate("userId");
+  try {
+    const registrations = await Registration.find()
+      .populate("eventId")
+      .populate("userId");
 
-        for (const reg of registrations) {
-            if (!reg.eventId || !reg.userId) continue;
+    for (const reg of registrations) {
+      if (!reg.eventId || !reg.userId) continue;
 
-            // Chuyển Date object sang DateTime
-            const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
+      const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
 
-            console.log(
-                `🔹 User: ${reg.userId.username}, Event: ${reg.eventId.name}\n` +
-                `   NowVN: ${nowVN.toString()}\n` +
-                `   StartTimeVN: ${startTimeVN.toString()}\n` +
-                `   EmailSent: ${reg.emailSent}`
-            );
+      console.log(
+        `🔹 User: ${reg.userId.username}, Event: ${reg.eventId.name}\n` +
+        `   NowVN: ${nowVN.toString()}\n` +
+        `   StartTimeVN: ${startTimeVN.toString()}\n` +
+        `   EmailSent: ${reg.emailSent}`
+      );
 
-            if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
-                console.log(`➡️ Gửi email nhắc nhở cho ${reg.userId.username}`);
-                await sendEmail(reg, startTimeVN);
-            }
+      // Nếu sự kiện bắt đầu trong 2 giờ tới và chưa gửi email
+      if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
+        const mailOptions = {
+          from: "githich462@gmail.com",
+          to: reg.userId.email, // ⚠️ Email người dùng
+          subject: `Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
+          text: `Sự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${startTimeVN.toFormat("HH:mm dd/MM/yyyy")}.`,
+        };
+
+        try {
+          console.log(`➡️  Gửi email nhắc nhở cho ${reg.userId.email}`);
+          await transporter.sendMail(mailOptions);
+          console.log(`✅  Email đã gửi thành công cho ${reg.userId.email}`);
+
+          // Cập nhật cờ emailSent = true
+          reg.emailSent = true;
+          await reg.save();
+        } catch (error) {
+          console.error(`❌  Gửi email thất bại cho ${reg.userId.email}:`, error);
         }
-    } catch (err) {
-        console.error("❌ Lỗi kiểm tra sự kiện:", err);
+      }
     }
+  } catch (err) {
+    console.error("❌ Lỗi kiểm tra sự kiện:", err);
+  }
 });
+
 
 app.get("/ping", async (req, res) => {   
   try {
@@ -842,6 +860,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
