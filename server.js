@@ -820,7 +820,7 @@ app.get("/ping", async (req, res) => {
     for (const reg of registrations) {
       const startTimeVN = DateTime.fromJSDate(reg.startTime).setZone("Asia/Ho_Chi_Minh");
 
-      if (!reg.emailSent && startTimeVN.diff(nowVN, "minutes").minutes <= 30 && startTimeVN > nowVN) {
+      if (!reg.emailSent && startTimeVN.diff(nowVN, "minutes").minutes <= 120 && startTimeVN > nowVN) {
         console.log(`📧 Gửi mail tới ${reg.email}`);
         await sendEmail(reg.email, reg.eventName, reg.startTime);
         reg.emailSent = true;
@@ -842,6 +842,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
