@@ -810,8 +810,8 @@ cron.schedule("* * * * *", async () => {
     }
 });
 
-app.get("/ping", (req, res) => {
-    try {
+app.get("/ping", async (req, res) => {   
+  try {
     console.log("🔍 Bắt đầu kiểm tra sự kiện sắp diễn ra...");
 
     const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
@@ -836,11 +836,13 @@ app.get("/ping", (req, res) => {
 });
 
 
+
 // ================== START SERVER ==================
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
