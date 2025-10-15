@@ -811,7 +811,28 @@ cron.schedule("* * * * *", async () => {
 });
 
 app.get("/ping", (req, res) => {
-    res.send("Server is alive ✅");
+    try {
+    console.log("🔍 Bắt đầu kiểm tra sự kiện sắp diễn ra...");
+
+    const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
+    const registrations = await Registration.find({});
+
+    for (const reg of registrations) {
+      const startTimeVN = DateTime.fromJSDate(reg.startTime).setZone("Asia/Ho_Chi_Minh");
+
+      if (!reg.emailSent && startTimeVN.diff(nowVN, "minutes").minutes <= 30 && startTimeVN > nowVN) {
+        console.log(`📧 Gửi mail tới ${reg.email}`);
+        await sendEmail(reg.email, reg.eventName, reg.startTime);
+        reg.emailSent = true;
+        await reg.save();
+      }
+    }
+
+    res.status(200).send("✅ Email check completed at " + nowVN.toISO());
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("❌ Error sending emails");
+  }
 });
 
 
@@ -820,6 +841,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
