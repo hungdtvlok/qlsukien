@@ -53,7 +53,9 @@ const eventSchema = new mongoose.Schema({
     endTime: { type: Date, required: true },
     location: { type: String, required: true },
     description: { type: String },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    maxParticipants: { type: Number, default: 100 }, // số lượng tối đa
+    registeredCount: { type: Number, default: 0 }    // số lượng đã đăng ký
 });
 
 const Event = mongoose.model("Event", eventSchema);
@@ -367,6 +369,11 @@ app.post("/api/registerEvent", async (req, res) => {
             return res.status(404).json({ message: "User hoặc Event không tồn tại" });
         }
 
+        // Kiểm tra đã đủ người chưa
+        if (event.registeredCount >= event.maxParticipants) {
+            return res.status(400).json({ message: "❌ Sự kiện đã đủ người tham gia" });
+        }
+
         // Kiểm tra đã đăng ký chưa
         const existing = await Registration.findOne({ userId: user._id, eventId });
         if (existing) {
@@ -376,6 +383,10 @@ app.post("/api/registerEvent", async (req, res) => {
         // Tạo đăng ký mới
         const registration = new Registration({ userId: user._id, eventId });
         await registration.save();
+
+        // Tăng số người đã đăng ký
+        event.registeredCount += 1;
+        await event.save();
 
         res.json({
             message: "Đăng ký sự kiện thành công",
@@ -390,7 +401,9 @@ app.post("/api/registerEvent", async (req, res) => {
                 name: event.name,
                 location: event.location,
                 startTime: event.startTime,
-                endTime: event.endTime
+                endTime: event.endTime,
+                registeredCount: event.registeredCount,
+                maxParticipants: event.maxParticipants
             }
         });
     } catch (err) {
@@ -498,6 +511,11 @@ app.post("/api/unregisterEvent", async (req, res) => {
 
         if (result.deletedCount === 0) {
             return res.status(404).json({ message: "Không tìm thấy đăng ký để hủy" });
+        }
+        //  Giảm số người đã đăng ký
+        if (eventExists.registeredCount > 0) {
+            eventExists.registeredCount -= 1;
+            await eventExists.save();
         }
 
         res.json({ message: `Đã hủy ${result.deletedCount} đăng ký thành công` });
@@ -775,58 +793,40 @@ Ban tổ chức.`
 }
 
 
-
 // ===== Cron job: kiểm tra mỗi phút =====
 cron.schedule("* * * * *", async () => {
-  console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
+    console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
 
-  const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
-  const twoHoursLaterVN = nowVN.plus({ hours: 2 });
+    const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
+    const twoHoursLaterVN = nowVN.plus({ hours: 2 });
 
-  try {
-    const registrations = await Registration.find()
-      .populate("eventId")
-      .populate("userId");
+    try {
+        const registrations = await Registration.find()
+            .populate("eventId")
+            .populate("userId");
 
-    for (const reg of registrations) {
-      if (!reg.eventId || !reg.userId) continue;
+        for (const reg of registrations) {
+            if (!reg.eventId || !reg.userId) continue;
 
-      const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
+            // Chuyển Date object sang DateTime
+            const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
 
-      console.log(
-        `🔹 User: ${reg.userId.username}, Event: ${reg.eventId.name}\n` +
-        `   NowVN: ${nowVN.toString()}\n` +
-        `   StartTimeVN: ${startTimeVN.toString()}\n` +
-        `   EmailSent: ${reg.emailSent}`
-      );
+            console.log(
+                `🔹 User: ${reg.userId.username}, Event: ${reg.eventId.name}\n` +
+                `   NowVN: ${nowVN.toString()}\n` +
+                `   StartTimeVN: ${startTimeVN.toString()}\n` +
+                `   EmailSent: ${reg.emailSent}`
+            );
 
-      // Nếu sự kiện bắt đầu trong 2 giờ tới và chưa gửi email
-      if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
-        const mailOptions = {
-          from: "githich462@gmail.com",
-          to: reg.userId.email, // ⚠️ Email người dùng
-          subject: `Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
-          text: `Sự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${startTimeVN.toFormat("HH:mm dd/MM/yyyy")}.`,
-        };
-
-        try {
-          console.log(`➡️  Gửi email nhắc nhở cho ${reg.userId.email}`);
-          await transporter.sendMail(mailOptions);
-          console.log(`✅  Email đã gửi thành công cho ${reg.userId.email}`);
-
-          // Cập nhật cờ emailSent = true
-          reg.emailSent = true;
-          await reg.save();
-        } catch (error) {
-          console.error(`❌  Gửi email thất bại cho ${reg.userId.email}:`, error);
+            if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
+                console.log(`➡️ Gửi email nhắc nhở cho ${reg.userId.username}`);
+                await sendEmail(reg, startTimeVN);
+            }
         }
-      }
+    } catch (err) {
+        console.error("❌ Lỗi kiểm tra sự kiện:", err);
     }
-  } catch (err) {
-    console.error("❌ Lỗi kiểm tra sự kiện:", err);
-  }
 });
-
 
 
 
@@ -836,12 +836,6 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
-
-
-
-
-
-
 
 
 
