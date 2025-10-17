@@ -395,7 +395,7 @@ app.post("/api/registerEvent", async (req, res) => {
         // 🔹 Kiểm tra vượt giới hạn
         if (currentCount >= event.maxParticipants) {
             return res.status(400).json({
-                message: `❌ Sự kiện đã đủ ${event.maxParticipants} người tham gia`
+                message: ` Sự kiện đã đủ ${event.maxParticipants} người tham gia`
             });
         }
 
@@ -853,6 +853,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
