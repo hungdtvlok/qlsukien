@@ -320,9 +320,8 @@ app.post("/api/events", async (req, res) => {
 // Sửa sự kiện
 app.put("/api/events/:id", async (req, res) => {
     try {
-        const { name, startTime, endTime, location, description } = req.body;
+        const { name, startTime, endTime, location, description, maxParticipants } = req.body;
 
-        // Chuyển ISO string sang Date
         const event = await Event.findByIdAndUpdate(
             req.params.id,
             {
@@ -330,7 +329,8 @@ app.put("/api/events/:id", async (req, res) => {
                 startTime: startTime ? new Date(startTime) : undefined,
                 endTime: endTime ? new Date(endTime) : undefined,
                 location,
-                description
+                description,
+                maxParticipants
             },
             { new: true } // trả về document mới cập nhật
         );
@@ -342,6 +342,7 @@ app.put("/api/events/:id", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 
 // Xóa sự kiện
@@ -853,6 +854,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
