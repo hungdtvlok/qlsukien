@@ -258,18 +258,32 @@ app.post("/api/updateAvatar", async (req, res) => {
 // Lấy tất cả sự kiện
 app.get("/api/events", async (req, res) => {
     try {
+        // Lấy danh sách sự kiện
         const events = await Event.find().sort({ createdAt: -1 });
 
+        // Duyệt qua từng sự kiện để đếm số người đã đăng ký
+        const eventsWithCounts = await Promise.all(events.map(async (event) => {
+            const registeredCount = await Registration.countDocuments({ eventId: event._id }); // đếm số người đăng ký
+            return {
+                ...event.toObject(),
+                registeredCount,                         // số người đăng ký
+                totalSlots: event.totalSlots || 100       // tổng số chỗ (nếu chưa có trường này thì bạn để mặc định 100)
+            };
+        }));
+
+        // Trả về kết quả
         res.json({
             message: "Lấy danh sách sự kiện thành công",
-            count: events.length,
-            events
+            count: eventsWithCounts.length,
+            events: eventsWithCounts
         });
+
     } catch (err) {
         console.error("❌ Lỗi khi lấy sự kiện:", err);
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // Tạo sự kiện (có startTime và endTime)
 app.post("/api/events", async (req, res) => {
@@ -836,6 +850,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
