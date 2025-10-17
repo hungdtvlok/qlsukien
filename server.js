@@ -375,42 +375,44 @@ app.post("/api/registerEvent", async (req, res) => {
             return res.status(400).json({ message: "Thiếu username hoặc eventId" });
         }
 
-        // Tìm user theo username
+        // 🔹 Lấy user & event
         const user = await User.findOne({ username });
         const event = await Event.findById(eventId);
 
         if (!user || !event) {
-            return res.status(404).json({ message: "User hoặc Event không tồn tại" });
+            return res.status(404).json({ message: "Không tìm thấy người dùng hoặc sự kiện" });
         }
 
-        // Kiểm tra đã đủ người chưa
-        if (event.registeredCount >= event.maxParticipants) {
-            return res.status(400).json({ message: "❌ Sự kiện đã đủ người tham gia" });
-        }
-
-        // Kiểm tra đã đăng ký chưa
+        // 🔹 Kiểm tra đã đăng ký chưa
         const existing = await Registration.findOne({ userId: user._id, eventId });
         if (existing) {
-            return res.status(400).json({ message: "Bạn đã đăng ký sự kiện này rồi" });
+            return res.status(400).json({ message: "❗ Bạn đã đăng ký sự kiện này rồi" });
         }
 
-        // Tạo đăng ký mới
-        const registration = new Registration({ userId: user._id, eventId });
+        // 🔹 Đếm số người đã đăng ký hiện tại (luôn chính xác)
+        const currentCount = await Registration.countDocuments({ eventId });
+
+        // 🔹 Kiểm tra vượt giới hạn
+        if (currentCount >= event.maxParticipants) {
+            return res.status(400).json({
+                message: `❌ Sự kiện đã đủ ${event.maxParticipants} người tham gia`
+            });
+        }
+
+        // 🔹 Lưu đăng ký mới
+        const registration = new Registration({
+            userId: user._id,
+            eventId: event._id
+        });
         await registration.save();
 
-        // Tăng số người đã đăng ký
-        event.registeredCount += 1;
+        // 🔹 Cập nhật lại số người đã đăng ký trong Event (để hiển thị nhanh ở Android)
+        event.registeredCount = currentCount + 1;
         await event.save();
 
         res.json({
-            message: "Đăng ký sự kiện thành công",
+            message: "✅ Đăng ký sự kiện thành công",
             registration,
-            user: {
-                username: user.username,
-                fullName: user.fullName,
-                email: user.email,
-                phone: user.phone
-            },
             event: {
                 name: event.name,
                 location: event.location,
@@ -425,6 +427,7 @@ app.post("/api/registerEvent", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // Lấy tất cả sự kiện đã đăng ký bởi tất cả user
 app.get("/api/allregisterEvent", async (req, res) => {
@@ -850,6 +853,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
