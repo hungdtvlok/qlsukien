@@ -847,9 +847,10 @@ cron.schedule("* * * * *", async () => {
 });
 
 // ================== API: Quên mật khẩu (Gửi Gmail thật) ==================
-import express from "express";
-import bodyParser from "body-parser";
-import User from "./models/User.js"; // Import model người dùng
+const express = require("express");
+const bodyParser = require("body-parser");
+const User = require("./models/User");
+
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -907,6 +908,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
