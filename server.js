@@ -758,7 +758,7 @@ app.get("/api/statistics", async (req, res) => {
     }
 });
 
-// ================== Gửi Gmail thật ==================
+// ================== Gửi Gmail thật trước 2 h==================
 
 const cron = require("node-cron");
 const nodemailer = require("nodemailer");
@@ -847,6 +847,7 @@ cron.schedule("* * * * *", async () => {
 });
 
 // ================== API: Quên mật khẩu (Gửi Gmail thật) ==================
+
 app.post("/api/quenmk", async (req, res) => {
     try {
         const { username } = req.body;
@@ -855,6 +856,7 @@ app.post("/api/quenmk", async (req, res) => {
             return res.status(400).json({ message: "Thiếu tên tài khoản!" });
         }
 
+        // Tìm user theo username
         const user = await User.findOne({ username });
         if (!user) {
             return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
@@ -864,17 +866,16 @@ app.post("/api/quenmk", async (req, res) => {
         const newPassword = Math.random().toString(36).slice(-8);
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
+        // Lưu mật khẩu mới vào DB
         user.password = hashedPassword;
         await user.save();
 
-        // Trả response ngay
-        res.json({ message: "Mật khẩu mới đã được gửi về Gmail!" });
-
-        // Gửi email async, không block request
+        // Gửi email async
         const mailOptions = {
-            from: '"Hệ thống Quản lý Sự kiện và hội thảo" <githich462@gmail.com>',
-            to: user.email,
+            from: "githich462@gmail.com",      
+            to: user.email,                     // gửi tới email user
             subject: "🔐 Cấp lại mật khẩu tài khoản của bạn",
+            text: `Xin chào ${user.username}, mật khẩu mới của bạn là: ${newPassword}`,
             html: `
                 <p>Xin chào <b>${user.username}</b>,</p>
                 <p>Bạn vừa yêu cầu đặt lại mật khẩu trong ứng dụng <b>Quản lý Sự kiện</b>.</p>
@@ -887,7 +888,10 @@ app.post("/api/quenmk", async (req, res) => {
 
         transporter.sendMail(mailOptions)
             .then(() => console.log(`✅ Đã gửi mật khẩu mới cho ${user.email}`))
-            .catch(err => console.error("❌ Lỗi gửi email:", err));
+            .catch(err => console.error(`❌ Lỗi gửi email cho ${user.email}:`, err));
+
+        // Trả response ngay cho Android
+        res.json({ message: "Mật khẩu mới đã được gửi về Gmail!" });
 
     } catch (err) {
         console.error("❌ Lỗi quên mật khẩu:", err);
@@ -902,6 +906,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
