@@ -886,14 +886,11 @@ app.post("/api/quenmk", async (req, res) => {
             `
         };
 
-        transporter.sendMail(mailOptions)
-            .then(() => console.log(`✅ Đã gửi mật khẩu mới cho ${user.email}`))
-            .catch(err => console.error(`❌ Lỗi gửi email cho ${user.email}:`, err));
-
-        // Trả response ngay cho Android
-        res.json({ message: "Mật khẩu mới đã được gửi về Gmail!" });
-
-    } catch (err) {
+        try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Đã gửi mật khẩu mới cho ${user.email}`);
+    res.json({ message: "Mật khẩu mới đã được gửi về Gmail!" });
+} catch (err) {
         console.error("❌ Lỗi quên mật khẩu:", err);
         res.status(500).json({ message: "Lỗi máy chủ!" });
     }
@@ -906,6 +903,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
