@@ -847,14 +847,6 @@ cron.schedule("* * * * *", async () => {
 });
 
 // ================== API: Quên mật khẩu (Gửi Gmail thật) ==================
-
-
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-
-
 app.post("/api/quenmk", async (req, res) => {
     try {
         const { username } = req.body;
@@ -863,23 +855,22 @@ app.post("/api/quenmk", async (req, res) => {
             return res.status(400).json({ message: "Thiếu tên tài khoản!" });
         }
 
-        // 🔍 Tìm tài khoản trong MongoDB
         const user = await User.findOne({ username });
         if (!user) {
             return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
         }
 
-        // 🔑 Tạo mật khẩu mới ngẫu nhiên (8 ký tự)
+        // Tạo mật khẩu mới
         const newPassword = Math.random().toString(36).slice(-8);
-
-        // 🔒 Mã hóa mật khẩu trước khi lưu vào DB
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // ✅ Cập nhật lại mật khẩu mới (đã mã hóa)
         user.password = hashedPassword;
         await user.save();
 
-        // 📧 Gửi Gmail bằng transporter
+        // Trả response ngay
+        res.json({ message: "Mật khẩu mới đã được gửi về Gmail!" });
+
+        // Gửi email async, không block request
         const mailOptions = {
             from: '"Hệ thống Quản lý Sự kiện và hội thảo" <githich462@gmail.com>',
             to: user.email,
@@ -894,10 +885,10 @@ app.post("/api/quenmk", async (req, res) => {
             `
         };
 
-        await transporter.sendMail(mailOptions);
-        console.log(`✅ Đã gửi mật khẩu mới cho ${user.email}`);
+        transporter.sendMail(mailOptions)
+            .then(() => console.log(`✅ Đã gửi mật khẩu mới cho ${user.email}`))
+            .catch(err => console.error("❌ Lỗi gửi email:", err));
 
-        res.json({ message: "Mật khẩu mới đã được gửi về Gmail!" });
     } catch (err) {
         console.error("❌ Lỗi quên mật khẩu:", err);
         res.status(500).json({ message: "Lỗi máy chủ!" });
@@ -911,6 +902,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
