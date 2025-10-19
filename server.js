@@ -853,7 +853,7 @@ cron.schedule("* * * * *", async () => {
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-const bcrypt = require("bcrypt");
+
 
 app.post("/api/quenmk", async (req, res) => {
     try {
@@ -911,6 +911,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
