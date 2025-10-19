@@ -34,10 +34,9 @@ app.post("/api/testmail", async (req, res) => {
     try {
         const info = await transporter.sendMail({
             from: `"Test Node.js" <${process.env.EMAIL_USER}>`,
-            to,
-            subject,
-            text,                       // nội dung thuần
-            html: `<h2>${subject}</h2><p>${text}</p>`, // nội dung HTML
+            "to": "nguoithu@gmail.com",
+    "subject": "Test gửi mail",
+    "text": "Nội dung test mail từ Node.js",
         });
 
         console.log("✅ Mail gửi thành công:", info.messageId);
@@ -58,3 +57,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server chạy tại http://localhost:${PORT}`);
 });
+
