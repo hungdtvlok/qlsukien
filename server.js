@@ -1,5 +1,4 @@
 // server.js
-require("dotenv").config(); // đọc biến môi trường từ .env
 const express = require("express");
 const nodemailer = require("nodemailer");
 
@@ -52,3 +51,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server chạy tại http://localhost:${PORT}`);
 });
+
