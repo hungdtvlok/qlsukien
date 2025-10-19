@@ -771,8 +771,8 @@ const transporter = nodemailer.createTransport({
     port: 465,
     secure: true,
     auth: {
-        user: "githich462@gmail.com",
-        pass: "aqzzbtyfarsgaesd", // App Password
+        user: process.env.EMAIL_USER,  // githich462@gmail.com
+        pass: process.env.EMAIL_PASS,  //aqzzbtyfarsgaesd
     },
 });
 
@@ -906,6 +906,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
