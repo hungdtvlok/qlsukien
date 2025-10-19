@@ -1,4 +1,5 @@
 // server.js
+
 const express = require("express");
 const nodemailer = require("nodemailer");
 
@@ -11,7 +12,7 @@ const transporter = nodemailer.createTransport({
     port: 465,
     secure: true,
     auth: {
-        user: process.env.EMAIL_USER, // ví dụ githich462@gmail.com
+        user: process.env.EMAIL_USER, // ví dụ: githich462@gmail.com
         pass: process.env.EMAIL_PASS, // App Password Gmail
     },
 });
@@ -33,15 +34,13 @@ app.post("/api/testmail", async (req, res) => {
     try {
         const info = await transporter.sendMail({
             from: `"Test Node.js" <${process.env.EMAIL_USER}>`,
-            {
-  "to": "githich462@gmail.com",
-  "subject": "Test mail từ Render",
-  "text": "Hello world từ Node.js server trên Render"
-}
-
+            to,
+            subject,
+            text,                       // nội dung thuần
+            html: `<h2>${subject}</h2><p>${text}</p>`, // nội dung HTML
         });
 
-        console.log("✅ Mail gửi thành công:", info);
+        console.log("✅ Mail gửi thành công:", info.messageId);
         res.json({ message: "Mail đã gửi thành công!", info });
     } catch (err) {
         console.error("❌ Lỗi gửi mail:", err);
@@ -49,10 +48,13 @@ app.post("/api/testmail", async (req, res) => {
     }
 });
 
+// ======= Route test server =======
+app.get("/", (req, res) => {
+    res.send("✅ Server đang chạy OK!");
+});
+
 // ======= START SERVER =======
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server chạy tại http://localhost:${PORT}`);
 });
-
-
