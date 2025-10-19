@@ -12,8 +12,8 @@ const transporter = nodemailer.createTransport({
     port: 465,
     secure: true,
     auth: {
-        user: process.env.EMAIL_USER, // ví dụ: githich462@gmail.com
-        pass: process.env.EMAIL_PASS, // App Password Gmail
+        user: "githich462@gmail.com",      // Gmail của bạn
+        pass: "aqzzbtyfarsgaesd",         // App Password Gmail
     },
 });
 
@@ -23,7 +23,7 @@ transporter.verify((err, success) => {
     else console.log("✅ Gmail SMTP sẵn sàng để gửi email!");
 });
 
-// ======= API test gửi mail =======
+// ======= API gửi mail =======
 app.post("/api/testmail", async (req, res) => {
     const { to, subject, text } = req.body;
 
@@ -33,10 +33,11 @@ app.post("/api/testmail", async (req, res) => {
 
     try {
         const info = await transporter.sendMail({
-            from: `"Test Node.js" <${process.env.EMAIL_USER}>`,
-            "to": "nguoithu@gmail.com",
-    "subject": "Test gửi mail",
-    "text": "Nội dung test mail từ Node.js",
+            from: `"Test Node.js" <githich462@gmail.com>`,
+            to,
+            subject,
+            text,
+            html: `<h2>${subject}</h2><p>${text}</p>`
         });
 
         console.log("✅ Mail gửi thành công:", info.messageId);
@@ -53,8 +54,7 @@ app.get("/", (req, res) => {
 });
 
 // ======= START SERVER =======
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server chạy tại http://localhost:${PORT}`);
 });
-
