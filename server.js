@@ -847,9 +847,6 @@ cron.schedule("* * * * *", async () => {
 });
 
 // ================== API: Quên mật khẩu (Gửi Gmail thật) ==================
-const express = require("express");
-const bodyParser = require("body-parser");
-const User = require("./models/User");
 
 
 app.use(bodyParser.json());
@@ -908,6 +905,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
