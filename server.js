@@ -881,7 +881,7 @@ app.post("/api/quenmk", async (req, res) => {
 
         // 📧 Gửi Gmail bằng transporter
         const mailOptions = {
-            from: '"Hệ thống Quản lý Sự kiện" <githich462@gmail.com>',
+            from: '"Hệ thống Quản lý Sự kiện và hội thảo" <githich462@gmail.com>',
             to: user.email,
             subject: "🔐 Cấp lại mật khẩu tài khoản của bạn",
             html: `
@@ -911,6 +911,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
