@@ -851,20 +851,28 @@ cron.schedule("* * * * *", async () => {
 const crypto = require("crypto");
 
 app.post("/api/quenmk", async (req, res) => {
-    try {
+   try {
         const { username } = req.body;
+        console.log("📩 Dữ liệu nhận từ Android:", req.body);
 
         if (!username) {
             return res.status(400).json({ message: "Thiếu tên tài khoản!" });
         }
 
-        // Tìm user ignore case
+        // In ra danh sách user để debug
+        const allUsers = await User.find({});
+        console.log("📋 Danh sách user hiện có:");
+        allUsers.forEach(u => console.log("-", u.username, u.email));
+
+        // Tìm user không phân biệt hoa/thường
         const user = await User.findOne({ username: { $regex: `^${username}$`, $options: 'i' } });
 
         if (!user) {
-            console.log("⚠️ Không tìm thấy user với username:", username);
+            console.log("⚠️ Không tìm thấy user:", username);
             return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
         }
+
+        console.log("✅ Đã tìm thấy user:", user.username, user.email);
 
         // Tạo mật khẩu mới mạnh hơn
         const newPassword = crypto.randomBytes(4).toString('hex'); // 8 ký tự hex
@@ -917,6 +925,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
