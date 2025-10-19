@@ -852,49 +852,39 @@ app.post("/api/quenmk", async (req, res) => {
     try {
         const { username } = req.body;
 
-        if (!username) {
-            return res.status(400).json({ message: "Thiếu tên tài khoản!" });
-        }
+        if (!username) return res.status(400).json({ message: "Thiếu tên tài khoản!" });
 
-        // Tìm user theo username
         const user = await User.findOne({ username });
-        if (!user) {
-            return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
-        }
+        if (!user) return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
 
-        // Tạo mật khẩu mới
         const newPassword = Math.random().toString(36).slice(-8);
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Lưu mật khẩu mới vào DB
         user.password = hashedPassword;
         await user.save();
 
-        // Gửi email async
+        // Gửi email và chờ hoàn tất
         const mailOptions = {
-           from: `"Hệ thống Quản lý Sự kiện và hội thảo" <${process.env.EMAIL_USER}>`,
-            to: user.email,                     // gửi tới email user
+            from: `"Hệ thống Quản lý Sự kiện" <${process.env.EMAIL_USER}>`,
+            to: user.email,
             subject: "🔐 Cấp lại mật khẩu tài khoản của bạn",
             text: `Xin chào ${user.username}, mật khẩu mới của bạn là: ${newPassword}`,
-            html: `
-                <p>Xin chào <b>${user.username}</b>,</p>
-                <p>Bạn vừa yêu cầu đặt lại mật khẩu trong ứng dụng <b>Quản lý Sự kiện</b>.</p>
-                <p>Mật khẩu mới của bạn là: <b style="color:blue;">${newPassword}</b></p>
-                <p>Vui lòng đăng nhập và đổi lại mật khẩu sau khi vào ứng dụng.</p>
-                <hr>
-                <small>Đây là email tự động, vui lòng không trả lời.</small>
-            `
+            html: `<p>Xin chào <b>${user.username}</b>,</p>
+                   <p>Mật khẩu mới của bạn là: <b style="color:blue;">${newPassword}</b></p>
+                   <p>Vui lòng đăng nhập và đổi mật khẩu sau khi vào ứng dụng.</p>`
         };
 
-        try {
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Đã gửi mật khẩu mới cho ${user.email}`);
-    res.json({ message: "Mật khẩu mới đã được gửi về Gmail!" });
-} catch (err) {
+        await transporter.sendMail(mailOptions);
+
+        console.log(`✅ Đã gửi mật khẩu mới cho ${user.email}`);
+        res.json({ message: "Mật khẩu mới đã được gửi về Gmail!" });
+
+    } catch (err) {
         console.error("❌ Lỗi quên mật khẩu:", err);
         res.status(500).json({ message: "Lỗi máy chủ!" });
     }
 });
+
 
 
 
@@ -903,6 +893,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
