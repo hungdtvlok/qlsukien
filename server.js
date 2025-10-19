@@ -149,6 +149,60 @@ app.post("/api/login", async (req, res) => {
         res.status(500).json({ message: "Server error: " + err.message });
     }
 });
+
+// ================== API: Quên mật khẩu (Gửi Gmail thật) ==================
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.post("/api/quenmk", async (req, res) => {
+    try {
+        const { username } = req.body;
+
+        if (!username) {
+            return res.status(400).json({ message: "Thiếu tên tài khoản!" });
+        }
+
+        // 🔍 Tìm tài khoản trong MongoDB
+        const user = await User.findOne({ username });
+        if (!user) {
+            return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
+        }
+
+        // 🔑 Tạo mật khẩu mới ngẫu nhiên (8 ký tự)
+        const newPassword = Math.random().toString(36).slice(-8);
+
+        // 🔒 Mã hóa mật khẩu trước khi lưu vào DB
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // ✅ Cập nhật lại mật khẩu mới (đã mã hóa)
+        user.password = hashedPassword;
+        await user.save();
+
+        // 📧 Gửi Gmail bằng transporter
+        const mailOptions = {
+            from: '"Hệ thống Quản lý Sự kiện và hội thảo" <githich462@gmail.com>',
+            to: user.email,
+            subject: "🔐 Cấp lại mật khẩu tài khoản của bạn",
+            html: `
+                <p>Xin chào <b>${user.username}</b>,</p>
+                <p>Bạn vừa yêu cầu đặt lại mật khẩu trong ứng dụng <b>Quản lý Sự kiện</b>.</p>
+                <p>Mật khẩu mới của bạn là: <b style="color:blue;">${newPassword}</b></p>
+                <p>Vui lòng đăng nhập và đổi lại mật khẩu sau khi vào ứng dụng.</p>
+                <hr>
+                <small>Đây là email tự động, vui lòng không trả lời.</small>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Đã gửi mật khẩu mới cho ${user.email}`);
+
+        res.json({ message: "Mật khẩu mới đã được gửi về Gmail!" });
+    } catch (err) {
+        console.error("❌ Lỗi quên mật khẩu:", err);
+        res.status(500).json({ message: "Lỗi máy chủ!" });
+    }
+});
+
 // ================== API LẤY NHÂN VIÊN ==================
 app.get("/api/nhanvien", async (req, res) => {
     try {
@@ -846,63 +900,7 @@ cron.schedule("* * * * *", async () => {
     }
 });
 
-// ================== API: Quên mật khẩu (Gửi Gmail thật) ==================
 
-
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-
-
-app.post("/api/quenmk", async (req, res) => {
-    try {
-        const { username } = req.body;
-
-        if (!username) {
-            return res.status(400).json({ message: "Thiếu tên tài khoản!" });
-        }
-
-        // 🔍 Tìm tài khoản trong MongoDB
-        const user = await User.findOne({ username });
-        if (!user) {
-            return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
-        }
-
-        // 🔑 Tạo mật khẩu mới ngẫu nhiên (8 ký tự)
-        const newPassword = Math.random().toString(36).slice(-8);
-
-        // 🔒 Mã hóa mật khẩu trước khi lưu vào DB
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-        // ✅ Cập nhật lại mật khẩu mới (đã mã hóa)
-        user.password = hashedPassword;
-        await user.save();
-
-        // 📧 Gửi Gmail bằng transporter
-        const mailOptions = {
-            from: '"Hệ thống Quản lý Sự kiện và hội thảo" <githich462@gmail.com>',
-            to: user.email,
-            subject: "🔐 Cấp lại mật khẩu tài khoản của bạn",
-            html: `
-                <p>Xin chào <b>${user.username}</b>,</p>
-                <p>Bạn vừa yêu cầu đặt lại mật khẩu trong ứng dụng <b>Quản lý Sự kiện</b>.</p>
-                <p>Mật khẩu mới của bạn là: <b style="color:blue;">${newPassword}</b></p>
-                <p>Vui lòng đăng nhập và đổi lại mật khẩu sau khi vào ứng dụng.</p>
-                <hr>
-                <small>Đây là email tự động, vui lòng không trả lời.</small>
-            `
-        };
-
-        await transporter.sendMail(mailOptions);
-        console.log(`✅ Đã gửi mật khẩu mới cho ${user.email}`);
-
-        res.json({ message: "Mật khẩu mới đã được gửi về Gmail!" });
-    } catch (err) {
-        console.error("❌ Lỗi quên mật khẩu:", err);
-        res.status(500).json({ message: "Lỗi máy chủ!" });
-    }
-});
 
 
 
@@ -911,6 +909,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
