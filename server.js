@@ -872,7 +872,7 @@ app.post("/api/quenmk", async (req, res) => {
 
         // Gửi email async
         const mailOptions = {
-           from: '"Hệ thống Quản lý Sự kiện và hội thảo" <githich462@gmail.com>',
+           from: `"Hệ thống Quản lý Sự kiện và hội thảo" <${process.env.EMAIL_USER}>`,
             to: user.email,                     // gửi tới email user
             subject: "🔐 Cấp lại mật khẩu tài khoản của bạn",
             text: `Xin chào ${user.username}, mật khẩu mới của bạn là: ${newPassword}`,
@@ -906,6 +906,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
