@@ -849,8 +849,11 @@ cron.schedule("* * * * *", async () => {
 // ================== API: Quên mật khẩu (Gửi Gmail thật) ==================
 
 
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+const bcrypt = require("bcrypt");
 
 app.post("/api/quenmk", async (req, res) => {
     try {
@@ -860,27 +863,30 @@ app.post("/api/quenmk", async (req, res) => {
             return res.status(400).json({ message: "Thiếu tên tài khoản!" });
         }
 
-        // Tìm tài khoản trong MongoDB
+        // 🔍 Tìm tài khoản trong MongoDB
         const user = await User.findOne({ username });
         if (!user) {
             return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
         }
 
-        // Tạo mật khẩu ngẫu nhiên 8 ký tự
+        // 🔑 Tạo mật khẩu mới ngẫu nhiên (8 ký tự)
         const newPassword = Math.random().toString(36).slice(-8);
 
-        // Cập nhật mật khẩu (chưa mã hóa)
-        user.password = newPassword;
+        // 🔒 Mã hóa mật khẩu trước khi lưu vào DB
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // ✅ Cập nhật lại mật khẩu mới (đã mã hóa)
+        user.password = hashedPassword;
         await user.save();
 
-        // Gửi Gmail bằng transporter đã có
+        // 📧 Gửi Gmail bằng transporter
         const mailOptions = {
             from: '"Hệ thống Quản lý Sự kiện" <githich462@gmail.com>',
             to: user.email,
             subject: "🔐 Cấp lại mật khẩu tài khoản của bạn",
             html: `
                 <p>Xin chào <b>${user.username}</b>,</p>
-                <p>Bạn vừa yêu cầu đặt lại mật khẩu trong ứng dụng Quản lý Sự kiện.</p>
+                <p>Bạn vừa yêu cầu đặt lại mật khẩu trong ứng dụng <b>Quản lý Sự kiện</b>.</p>
                 <p>Mật khẩu mới của bạn là: <b style="color:blue;">${newPassword}</b></p>
                 <p>Vui lòng đăng nhập và đổi lại mật khẩu sau khi vào ứng dụng.</p>
                 <hr>
@@ -905,6 +911,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
