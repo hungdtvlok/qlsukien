@@ -781,7 +781,7 @@ app.post("/api/quenmk", async (req, res) => {
     user.password = hashedPassword;
     await user.save();
 
-    
+    res.json({ message: "Email đã gửi thành công!" });
 
     // Gửi mail bất đồng bộ
     const msg = {
