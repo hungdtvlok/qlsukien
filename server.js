@@ -811,15 +811,12 @@ app.post("/api/quenmk", async (req, res) => {
     console.log("🔒 Đã cập nhật mật khẩu tạm cho:", user.username);
 
     // ✉️ Gửi mail
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: "githich462@gmail.com",
-        pass: "aqzzbtyfarsgaesd",
-      },
-    });
-
-    
+    const mailOptions = {
+      from: '"QL Sự kiện" <githich462@gmail.com>',
+      to: user.email,
+      subject: "Khôi phục mật khẩu - Ứng dụng Quản lý sự kiện",
+      text: `Xin chào ${user.username},\n\nMật khẩu tạm thời của bạn là: ${tempPassword}\nHãy đăng nhập và đổi mật khẩu sau khi vào ứng dụng.\n\nTrân trọng,\nNhóm phát triển QLSK.`,
+    };
 
     await transporter.sendMail(mailOptions);
     console.log("✅ Email khôi phục đã được gửi cho:", user.email);
@@ -846,6 +843,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
