@@ -776,6 +776,7 @@ app.post("/api/quenmk", async (req, res) => {
 
     username = username.trim().toLowerCase();
 
+    // Tìm user
     const user = await User.findOne({
       username: { $regex: `^${username}$`, $options: "i" },
     });
@@ -799,16 +800,16 @@ app.post("/api/quenmk", async (req, res) => {
     console.log("🔑 Cập nhật mật khẩu tạm:", tempPassword, "cho", user.username);
     console.log("📧 Email user:", user.email);
 
-    // --- Bắt lỗi gửi mail riêng ---
+    // --- Gửi mail bằng SendGrid ---
     try {
-      const mailOptions = {
-        from: '"QL Sự kiện" <githich462@gmail.com>',
+      const msg = {
         to: user.email,
-        subject: "Khôi phục mật khẩu - Ứng dụng Quản lý sự kiện",
+        from: 'githich462@gmail.com', // email phải verified trên SendGrid
+        subject: 'Khôi phục mật khẩu - Ứng dụng Quản lý sự kiện',
         text: `Xin chào ${user.username},\n\nMật khẩu tạm thời của bạn là: ${tempPassword}\nHãy đăng nhập và đổi mật khẩu sau khi vào ứng dụng.\n\nTrân trọng,\nNhóm phát triển QLSK.`,
       };
 
-      await transporter.sendMail(mailOptions);
+      await sgMail.send(msg);
       console.log("📧 Đã gửi email khôi phục tới:", user.email);
       res.json({ message: "Đã gửi mật khẩu tạm thời về email của bạn!" });
 
@@ -838,6 +839,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
