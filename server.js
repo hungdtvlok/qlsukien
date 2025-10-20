@@ -781,7 +781,7 @@ app.post("/api/quenmk", async (req, res) => {
     user.password = hashedPassword;
     await user.save();
 
-    res.json({ Email đã gửi thành công! });
+   res.json({ message: "Email đã gửi thành công!" });
 
     // Gửi mail bất đồng bộ
     const msg = {
@@ -816,6 +816,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
