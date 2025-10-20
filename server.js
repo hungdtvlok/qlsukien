@@ -767,18 +767,15 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 // API quên mật khẩu
 app.post("/api/quenmk", async (req, res) => {
   try {
-    let { username } = req.body;
+    const { username } = req.body;
     console.log("📩 Nhận yêu cầu quên mật khẩu:", req.body);
 
     if (!username) {
       return res.status(400).json({ message: "Thiếu tên tài khoản!" });
     }
 
-    username = username.trim().toLowerCase();
-
-    // Tìm user
     const user = await User.findOne({
-      username: { $regex: `^${username}$`, $options: "i" },
+      username: { $regex: `^${username.trim()}$`, $options: "i" },
     });
 
     if (!user) {
@@ -791,39 +788,32 @@ app.post("/api/quenmk", async (req, res) => {
       return res.status(400).json({ message: "Tài khoản này chưa có email để gửi mật khẩu!" });
     }
 
-    // Tạo mật khẩu tạm
+    // 🔑 Tạo mật khẩu tạm
     const tempPassword = crypto.randomBytes(4).toString("hex");
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
     user.password = hashedPassword;
     await user.save();
 
     console.log("🔑 Cập nhật mật khẩu tạm:", tempPassword, "cho", user.username);
-    console.log("📧 Email user:", user.email);
 
-    // --- Gửi mail bằng SendGrid ---
-    try {
-      const msg = {
-        to: user.email,
-        from: 'githich462@gmail.com', // email phải verified trên SendGrid
-        subject: 'Khôi phục mật khẩu - Ứng dụng Quản lý sự kiện',
-        text: `Xin chào ${user.username},\n\nMật khẩu tạm thời của bạn là: ${tempPassword}\nHãy đăng nhập và đổi mật khẩu sau khi vào ứng dụng.\n\nTrân trọng,\nNhóm phát triển QLSK.`,
-      };
+    // ✉️ Gửi email qua SendGrid
+    const mailOptions = {
+      from: `"${process.env.SENDGRID_FROM_NAME}" <${process.env.SENDGRID_FROM_EMAIL}>`,
+      to: user.email,
+      subject: "Khôi phục mật khẩu - Ứng dụng Quản lý sự kiện",
+      text: `Xin chào ${user.username},\n\nMật khẩu tạm thời của bạn là: ${tempPassword}\nHãy đăng nhập và đổi mật khẩu sau khi vào ứng dụng.\n\nTrân trọng,\nNhóm phát triển QLSK.`,
+    };
 
-      await sgMail.send(msg);
-      console.log("📧 Đã gửi email khôi phục tới:", user.email);
-      res.json({ message: "Đã gửi mật khẩu tạm thời về email của bạn!" });
+    await sgMail.send(mailOptions);
+    console.log("📧 Đã gửi email khôi phục tới:", user.email);
 
-    } catch (mailError) {
-      console.error("❌ Lỗi gửi email:", mailError);
-      res.status(500).json({ message: "Lỗi khi gửi email. Vui lòng thử lại sau.", error: mailError.message });
-    }
+    res.json({ message: "Đã gửi mật khẩu tạm thời về email của bạn!" });
 
-  } catch (e) {
-    console.error("❌ Lỗi khi xử lý quên mật khẩu:", e);
-    res.status(500).json({ message: "Lỗi máy chủ: " + e.message });
+  } catch (error) {
+    console.error("❌ Lỗi /api/quenmk:", error);
+    res.status(500).json({ message: "Lỗi server: " + error.message });
   }
 });
-
 
 
 
@@ -839,6 +829,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
