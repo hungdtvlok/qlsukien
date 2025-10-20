@@ -770,6 +770,7 @@ app.post("/api/quenmk", async (req, res) => {
     const { username } = req.body;
     if (!username) return res.status(400).json({ message: "Thiếu tên tài khoản!" });
 
+    // Tìm user
     const user = await User.findOne({ username: { $regex: `^${username.trim()}$`, $options: "i" } });
     if (!user) return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
     if (!user.email) return res.status(400).json({ message: "Tài khoản chưa có email!" });
@@ -780,13 +781,13 @@ app.post("/api/quenmk", async (req, res) => {
     user.password = hashedPassword;
     await user.save();
 
-    // Gửi mail bất đồng bộ, trả response ngay
+    // Trả response ngay
     res.json({ message: "Yêu cầu đã được ghi nhận. Vui lòng kiểm tra email." });
 
-    // Gửi email
+    // Gửi mail bất đồng bộ
     const msg = {
       to: user.email,
-      from: "githich462@gmail.com", // email đã verify SendGrid
+      from: "no-reply@qlsukien.com",  // domain đã verify SendGrid
       subject: "Khôi phục mật khẩu - QLSK",
       text: `Xin chào ${user.username}, mật khẩu tạm thời của bạn là: ${tempPassword}`,
       html: `<p>Xin chào <b>${user.username}</b>,</p>
@@ -796,16 +797,12 @@ app.post("/api/quenmk", async (req, res) => {
 
     sgMail.send(msg)
       .then(() => console.log(`📧 Email gửi thành công tới ${user.email}`))
-      .catch(err => {
-        console.error("❌ Lỗi gửi email:", err.response ? err.response.body : err);
-      });
+      .catch(err => console.error("❌ Lỗi gửi email:", err.response ? err.response.body : err));
 
   } catch (err) {
     console.error("❌ Lỗi API quên mật khẩu:", err);
     res.status(500).json({ message: "Lỗi server: " + err.message });
   }
-});
-
 
 
 
@@ -820,6 +817,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
