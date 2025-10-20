@@ -412,7 +412,7 @@ app.post("/api/registerEvent", async (req, res) => {
         await event.save();
 
         res.json({
-            message: "✅ Đăng ký sự kiện thành công",
+            message: " Đăng ký sự kiện thành công",
             registration,
             event: {
                 name: event.name,
@@ -888,6 +888,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
