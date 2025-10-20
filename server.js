@@ -776,10 +776,22 @@ app.post("/api/quenmk", async (req, res) => {
         }
 
         // Tìm user trong MongoDB
-        const user = await User.findOne({ username });
-        if (!user) {
-            return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
-        }
+        const user = await User.findOne({
+      username: { $regex: `^${username.trim()}$`, $options: "i" }
+    });
+
+    if (!user) {
+      console.log("⚠️ Không tìm thấy user:", username);
+      return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
+    }
+
+    console.log("✅ Đã tìm thấy user:", user.username, user.email);
+
+    res.status(200).json({
+      message: "Tìm thấy tài khoản!",
+      username: user.username,
+      email: user.email
+    });
 
         // Tạo mật khẩu tạm ngẫu nhiên
         const tempPassword = crypto.randomBytes(4).toString("hex");
@@ -825,6 +837,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
