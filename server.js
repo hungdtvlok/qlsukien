@@ -849,7 +849,7 @@ cron.schedule("* * * * *", async () => {
 // ================== API: Quên mật khẩu (Gửi Gmail thật) ==================
 
 const crypto = require("crypto");
-const bcrypt = require("bcryptjs");
+
 app.post("/api/quenmk", async (req, res) => {
   try {
     const { username } = req.body;
@@ -908,6 +908,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
