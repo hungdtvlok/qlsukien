@@ -779,9 +779,8 @@ app.post("/api/quenmk", async (req, res) => {
     }
 
     // 🔍 Tìm user trong MongoDB (không phân biệt hoa/thường, loại bỏ khoảng trắng)
-    const user = await User.findOne({
-      username: { $regex: `^${username.trim()}$`, $options: "i" }
-    });
+    const user = await User.findOne({ username });
+    
 
     if (!user) {
       console.log("⚠️ Không tìm thấy user:", username);
@@ -844,6 +843,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
