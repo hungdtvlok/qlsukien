@@ -773,51 +773,68 @@ const transporter = nodemailer.createTransport({
 
 // API quên mật khẩu
 app.post("/api/quenmk", async (req, res) => {
-    try {
-        const { username } = req.body;
-        console.log("📩 Dữ liệu nhận từ Android:", req.body);
+  try {
+    let { username } = req.body;
+    console.log("📩 Dữ liệu được nhận từ Android:", req.body);
 
-        if (!username) {
-            return res.status(400).json({ message: "Thiếu tên tài khoản!" });
-        }
-
-        // 🔎 Tìm user trong MongoDB
-        const allUsers = await User.find({});
-console.log("📋 Danh sách user hiện có:");
-allUsers.forEach(u => console.log(`- ${u.username} ${u.email}`));
-
-const user = await User.findOne({
-  username: { $regex: `^${username.trim()}$`, $options: "i" }
-});
-        if (!user) {
-            return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
-        }
-
-        // 🔐 Tạo mật khẩu ngẫu nhiên mới
-        const newPassword = crypto.randomBytes(4).toString("hex");
-
-        // 🔒 Hash lại mật khẩu mới
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-        user.password = hashedPassword;
-        await user.save();
-
-        // 📧 Gửi email mật khẩu mới cho người dùng
-        const mailOptions = {
-            from: "githich462@gmail.com",
-            to: user.email,
-            subject: "Khôi phục mật khẩu tài khoản",
-            text: `Xin chào ${user.fullName || user.username},\n\nMật khẩu mới của bạn là: ${newPassword}\nVui lòng đăng nhập và đổi lại mật khẩu sau khi vào ứng dụng.\n\nTrân trọng,\nHệ thống quản lý sự kiện.`,
-        };
-
-        await transporter.sendMail(mailOptions);
-        console.log("✅ Gửi email thành công tới:", user.email);
-
-        res.json({ message: "Mật khẩu mới đã được gửi tới email của bạn!" });
-
-    } catch (err) {
-        console.error("❌ Lỗi khi xử lý quên mật khẩu:", err);
-        res.status(500).json({ message: "Lỗi server: " + err.message });
+    if (!username) {
+      return res.status(400).json({ message: "Thiếu tên tài khoản!" });
     }
+
+    // ✅ Chuẩn hóa dữ liệu (xóa khoảng trắng, chuyển về chữ thường)
+    username = username.trim().toLowerCase();
+
+    // In toàn bộ danh sách user
+    const allUsers = await User.find({});
+    console.log("📋 Danh sách người dùng hiện có:");
+    allUsers.forEach(u => console.log(`- ${u.username} ${u.email}`));
+
+    // 🔍 Tìm user KHÔNG phân biệt hoa/thường
+    const user = await User.findOne({
+      username: { $regex: `^${username}$`, $options: "i" }
+    });
+
+    if (!user) {
+      console.log("⚠️ Không tìm thấy user:", username);
+      return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
+    }
+
+    console.log("✅ Đã tìm thấy user:", user.username, user.email);
+
+    // 🔑 Tạo mật khẩu tạm
+    const tempPassword = crypto.randomBytes(4).toString("hex");
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    // 💾 Lưu mật khẩu tạm vào DB
+    user.password = hashedPassword;
+    await user.save();
+    console.log("🔒 Đã cập nhật mật khẩu tạm cho:", user.username);
+
+    // ✉️ Gửi mail
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "githich462@gmail.com",
+        pass: "aqzzbtyfarsgaesd",
+      },
+    });
+
+    const mailOptions = {
+      from: '"QL Sự kiện" <githich462@gmail.com>',
+      to: user.email,
+      subject: "Khôi phục mật khẩu - Ứng dụng Quản lý sự kiện",
+      text: `Xin chào ${user.username},\n\nMật khẩu tạm thời của bạn là: ${tempPassword}\nHãy đăng nhập và đổi mật khẩu sau khi vào ứng dụng.\n\nTrân trọng,\nNhóm phát triển QLSK.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log("✅ Email khôi phục đã được gửi cho:", user.email);
+
+    res.json({ message: "Đã gửi mật khẩu tạm thời về email của bạn!" });
+
+  } catch (error) {
+    console.error("❌ Lỗi /api/quenmk:", error);
+    res.status(500).json({ message: "Lỗi server!" });
+  }
 });
 
 
@@ -833,6 +850,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
