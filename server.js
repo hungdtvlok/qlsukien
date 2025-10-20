@@ -812,7 +812,7 @@ const cron = require("node-cron");
 
 const { DateTime } = require("luxon");
 
-sgMail.setApiKey("YOUR_SENDGRID_API_KEY"); // Thay bằng API key của bạn
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 // ================== Route kiểm tra server / ping ==================
 app.get("/api/ping", (req, res) => {
@@ -888,6 +888,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
