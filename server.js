@@ -134,9 +134,17 @@ app.post("/api/quenmk", async (req, res) => {
     res.json({ message: "Đã gửi mật khẩu tạm thời về email của bạn!" });
 
   } catch (e) {
-    console.error("❌ Lỗi khi xử lý quên mật khẩu:", e);
-    res.status(500).json({ message: "Lỗi máy chủ: " + e.message });
-  }
+  console.error("❌ Lỗi khi xử lý quên mật khẩu:");
+  console.error("Loại lỗi:", e.name);
+  console.error("Thông điệp:", e.message);
+  console.error("Nguyên nhân:", e.cause);
+  console.error("Stack trace:\n", e.stack);
+
+  res.status(500).json({
+    message: "Lỗi máy chủ: " + e.message,
+    type: e.name,
+  });
+}
 });
 
 
@@ -852,6 +860,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
