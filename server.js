@@ -804,6 +804,81 @@ app.post("/api/quenmk", async (req, res) => {
   }
 
 });
+// ================== Gửi email nhắc nhở trước 2h bằng SendGrid ==================
+const cron = require("node-cron");
+
+const { DateTime } = require("luxon");
+
+sgMail.setApiKey("YOUR_SENDGRID_API_KEY"); // Thay bằng API key của bạn
+
+// ===== Hàm gửi email =====
+async function sendEmail(reg, startTimeVN) {
+    const formattedTime = startTimeVN.toFormat("dd/MM/yyyy 'lúc' HH:mm");
+
+    const msg = {
+        to: reg.userId.email,
+        from: "githich462@gmail.com", // email đã verify SendGrid
+        subject: `📢 Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
+        text: `Xin chào ${reg.userId.fullName},
+
+Sự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.
+Địa điểm: ${reg.eventId.location || "chưa cập nhật"}.
+
+Hẹn gặp bạn tại sự kiện!
+
+Trân trọng,
+Ban tổ chức.`,
+        html: `<p>Xin chào <b>${reg.userId.fullName}</b>,</p>
+               <p>Sự kiện "<b>${reg.eventId.name}</b>" sẽ bắt đầu lúc <b>${formattedTime}</b>.</p>
+               <p>Địa điểm: ${reg.eventId.location || "chưa cập nhật"}.</p>
+               <p>Hẹn gặp bạn tại sự kiện!</p>
+               <p>Trân trọng,<br/>Ban tổ chức.</p>`
+    };
+
+    try {
+        await sgMail.send(msg);
+        console.log(`✅ Đã gửi email đến ${reg.userId.email}`);
+        reg.emailSent = true;
+        await reg.save();
+    } catch (err) {
+        console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, err.response ? err.response.body : err);
+    }
+}
+
+// ===== Cron job: kiểm tra mỗi phút =====
+cron.schedule("* * * * *", async () => {
+    console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
+
+    const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
+    const twoHoursLaterVN = nowVN.plus({ hours: 2 });
+
+    try {
+        const registrations = await Registration.find()
+            .populate("eventId")
+            .populate("userId");
+
+        for (const reg of registrations) {
+            if (!reg.eventId || !reg.userId) continue;
+
+            const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
+
+            console.log(
+                `🔹 User: ${reg.userId.username}, Event: ${reg.eventId.name}\n` +
+                `   NowVN: ${nowVN.toISO()}\n` +
+                `   StartTimeVN: ${startTimeVN.toISO()}\n` +
+                `   EmailSent: ${reg.emailSent}`
+            );
+
+            // Gửi email nếu sự kiện sắp diễn ra trong 2 giờ tới và chưa gửi email
+            if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN && !reg.emailSent) {
+                console.log(`➡️ Gửi email nhắc nhở cho ${reg.userId.username}`);
+                await sendEmail(reg, startTimeVN);
+            }
+        }
+    } catch (err) {
+        console.error("❌ Lỗi kiểm tra sự kiện:", err);
+    }
+});
 
 
 
@@ -816,6 +891,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
