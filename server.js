@@ -776,6 +776,7 @@ app.post("/api/quenmk", async (req, res) => {
 
     username = username.trim().toLowerCase();
 
+    // Tìm user
     const user = await User.findOne({
       username: { $regex: `^${username}$`, $options: "i" },
     });
@@ -790,8 +791,8 @@ app.post("/api/quenmk", async (req, res) => {
       return res.status(400).json({ message: "Tài khoản này chưa có email để gửi mật khẩu!" });
     }
 
-    // Tạo mật khẩu tạm
-    const tempPassword = crypto.randomBytes(4).toString("hex");
+    // Tạo mật khẩu tạm thời (6 chữ số dễ nhập)
+    const tempPassword = Math.floor(100000 + Math.random() * 900000).toString();
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
     user.password = hashedPassword;
     await user.save();
@@ -803,9 +804,16 @@ app.post("/api/quenmk", async (req, res) => {
     try {
       const msg = {
         to: user.email,
-        from: "githich462@gmail.com", // email đã verified trên SendGrid
+        from: "githich462@gmail.com", // email đã verify trên SendGrid
         subject: "Khôi phục mật khẩu - Ứng dụng Quản lý sự kiện",
-        text: `Xin chào ${user.username},\n\nMật khẩu tạm thời của bạn là: ${tempPassword}\nHãy đăng nhập và đổi mật khẩu sau khi vào ứng dụng.\n\nTrân trọng,\nNhóm phát triển QLSK.`,
+        text: `Xin chào ${user.username},\nMật khẩu tạm thời của bạn là: ${tempPassword}\nHãy đăng nhập và đổi mật khẩu sau khi vào ứng dụng.`,
+        html: `
+          <p>Xin chào <b>${user.username}</b>,</p>
+          <p>Mật khẩu tạm thời của bạn là: <b>${tempPassword}</b></p>
+          <p>Hãy đăng nhập và đổi mật khẩu ngay sau khi vào ứng dụng.</p>
+          <hr>
+          <p>Trân trọng,<br>Nhóm phát triển QLSK</p>
+        `
       };
 
       await sgMail.send(msg);
@@ -815,7 +823,10 @@ app.post("/api/quenmk", async (req, res) => {
 
     } catch (mailError) {
       console.error("❌ Lỗi gửi email:", mailError);
-      res.status(500).json({ message: "Lỗi khi gửi email. Vui lòng thử lại sau.", error: mailError.message });
+      res.status(500).json({
+        message: "Lỗi khi gửi email. Vui lòng thử lại sau.",
+        error: mailError.message
+      });
     }
 
   } catch (e) {
@@ -838,6 +849,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
