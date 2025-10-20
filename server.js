@@ -94,10 +94,8 @@ app.post("/api/quenmk", async (req, res) => {
       return res.status(400).json({ message: "Thiếu tên tài khoản!" });
     }
 
-    // Chuẩn hóa dữ liệu
     username = username.trim().toLowerCase();
 
-    // Tìm user
     const user = await User.findOne({
       username: { $regex: `^${username}$`, $options: "i" },
     });
@@ -121,7 +119,7 @@ app.post("/api/quenmk", async (req, res) => {
     console.log("🔑 Cập nhật mật khẩu tạm:", tempPassword, "cho", user.username);
     console.log("📧 Email user:", user.email);
 
-    // Gửi mail trong try/catch riêng
+    // --- Bắt lỗi gửi mail riêng ---
     try {
       const mailOptions = {
         from: '"QL Sự kiện" <githich462@gmail.com>',
@@ -131,22 +129,20 @@ app.post("/api/quenmk", async (req, res) => {
       };
 
       await transporter.sendMail(mailOptions);
-      try {
-    await transporter.sendMail(mailOptions);
-    console.log("📧 Đã gửi email khôi phục tới:", user.email);
-    res.json({ message: "Đã gửi mật khẩu tạm thời về email của bạn!" });
-} catch (mailError) {
-    console.error("❌ Lỗi gửi email:", mailError);
-    res.status(500).json({ message: "Lỗi khi gửi email. Vui lòng thử lại sau.", error: mailError.message });
-}
+      console.log("📧 Đã gửi email khôi phục tới:", user.email);
+      res.json({ message: "Đã gửi mật khẩu tạm thời về email của bạn!" });
 
-      
+    } catch (mailError) {
+      console.error("❌ Lỗi gửi email:", mailError);
+      res.status(500).json({ message: "Lỗi khi gửi email. Vui lòng thử lại sau.", error: mailError.message });
+    }
 
   } catch (e) {
     console.error("❌ Lỗi khi xử lý quên mật khẩu:", e);
     res.status(500).json({ message: "Lỗi máy chủ: " + e.message });
   }
 });
+
 
 
 
@@ -861,6 +857,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
