@@ -849,71 +849,54 @@ cron.schedule("* * * * *", async () => {
 // ================== API: Quên mật khẩu (Gửi Gmail thật) ==================
 
 const crypto = require("crypto");
-
+const bcrypt = require("bcryptjs");
 app.post("/api/quenmk", async (req, res) => {
-   try {
-        const { username } = req.body;
-        console.log("📩 Dữ liệu nhận từ Android:", req.body);
+  try {
+    const { username } = req.body;
+    console.log("📩 Yêu cầu quên mật khẩu:", username);
 
-        if (!username) {
-            return res.status(400).json({ message: "Thiếu tên tài khoản!" });
-        }
-
-        // In ra danh sách user để debug
-        const allUsers = await User.find({});
-        console.log("📋 Danh sách user hiện có:");
-        allUsers.forEach(u => console.log("-", u.username, u.email));
-
-        // Tìm user không phân biệt hoa/thường
-        const user = await User.findOne({ username: { $regex: `^${username}$`, $options: 'i' } });
-
-        if (!user) {
-            console.log("⚠️ Không tìm thấy user:", username);
-            return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
-        }
-
-        console.log("✅ Đã tìm thấy user:", user.username, user.email);
-
-        // Tạo mật khẩu mới mạnh hơn
-        const newPassword = crypto.randomBytes(4).toString('hex'); // 8 ký tự hex
-        const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-        // Lưu mật khẩu mới vào DB
-        user.password = hashedPassword;
-        await user.save();
-
-        console.log("🔑 Mật khẩu mới đã lưu cho user:", user.username);
-
-        // Gửi email
-        const mailOptions = {
-            from: `"Hệ thống Quản lý Sự kiện" <${process.env.EMAIL_USER}>`,
-            to: user.email,
-            subject: "🔐 Cấp lại mật khẩu tài khoản của bạn",
-            text: `Xin chào ${user.username}, mật khẩu mới của bạn là: ${newPassword}`,
-            html: `<p>Xin chào <b>${user.username}</b>,</p>
-                   <p>Mật khẩu mới của bạn là: <b style="color:blue;">${newPassword}</b></p>
-                   <p>Vui lòng đăng nhập và đổi mật khẩu sau khi vào ứng dụng.</p>
-                   <hr>
-                   <small>Đây là email tự động, vui lòng không trả lời.</small>`
-        };
-
-        // await để chắc chắn email gửi xong
-        await transporter.sendMail(mailOptions);
-        console.log(`✅ Đã gửi email mật khẩu mới tới: ${user.email}`);
-
-        // Trả response cho Android
-        res.status(200).json({ message: "Mật khẩu mới đã được gửi về Gmail!" });
-
-    } catch (err) {
-        console.error("❌ Lỗi quên mật khẩu:", err);
-
-        // Nếu lỗi gửi mail, vẫn báo rõ ràng
-        if (err.responseCode || err.message.includes("SMTP")) {
-            return res.status(500).json({ message: "Lỗi gửi email, vui lòng thử lại sau!" });
-        }
-
-        res.status(500).json({ message: "Lỗi máy chủ!" });
+    if (!username) {
+      return res.status(400).json({ message: "Thiếu tên tài khoản!" });
     }
+
+    // Tìm user trong MongoDB
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
+    }
+
+    // Tạo mật khẩu tạm ngẫu nhiên
+    const tempPassword = crypto.randomBytes(4).toString("hex");
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    // Cập nhật mật khẩu mới trong DB
+    user.password = hashedPassword;
+    await user.save();
+
+    // Gửi mail qua Gmail SMTP
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "githich462@gmail.com", // tài khoản Gmail của bạn
+        pass: "aqzzbtyfarsgaesd", // App Password (không phải mật khẩu Gmail thật)
+      },
+    });
+
+    const mailOptions = {
+      from: "githich462@gmail.com",
+      to: user.email,
+      subject: "Khôi phục mật khẩu - Ứng dụng Quản lý sự kiện",
+      text: `Xin chào ${username},\n\nMật khẩu tạm thời của bạn là: ${tempPassword}\nHãy đăng nhập và đổi mật khẩu ngay sau khi vào ứng dụng.`,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log("✅ Email khôi phục đã được gửi cho:", user.email);
+
+    res.json({ message: "Đã gửi mật khẩu tạm thời về email của bạn!" });
+  } catch (error) {
+    console.error("❌ Lỗi /api/quenmk:", error);
+    res.status(500).json({ message: "Lỗi server!" });
+  }
 });
 
 
@@ -925,6 +908,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
