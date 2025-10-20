@@ -761,7 +761,7 @@ app.get("/api/statistics", async (req, res) => {
 // ================== API QUÊN MẬT KHẨU ==================
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
-const User = require("./models/User"); // ⚠️ Đảm bảo bạn có import đúng model User
+
 
 // Cấu hình gửi email (dùng Gmail)
 const transporter = nodemailer.createTransport({
@@ -852,6 +852,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
