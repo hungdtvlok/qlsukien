@@ -131,13 +131,16 @@ app.post("/api/quenmk", async (req, res) => {
       };
 
       await transporter.sendMail(mailOptions);
-      console.log("📧 Đã gửi email khôi phục tới:", user.email);
+      try {
+    await transporter.sendMail(mailOptions);
+    console.log("📧 Đã gửi email khôi phục tới:", user.email);
+    res.json({ message: "Đã gửi mật khẩu tạm thời về email của bạn!" });
+} catch (mailError) {
+    console.error("❌ Lỗi gửi email:", mailError);
+    res.status(500).json({ message: "Lỗi khi gửi email. Vui lòng thử lại sau.", error: mailError.message });
+}
 
-      res.json({ message: "Đã gửi mật khẩu tạm thời về email của bạn!" });
-    } catch (mailErr) {
-      console.error("❌ Lỗi khi gửi mail:", mailErr);
-      res.status(500).json({ message: "Lỗi gửi email: " + mailErr.message });
-    }
+      
 
   } catch (e) {
     console.error("❌ Lỗi khi xử lý quên mật khẩu:", e);
@@ -858,6 +861,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
