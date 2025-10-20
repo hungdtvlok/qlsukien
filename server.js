@@ -787,7 +787,7 @@ app.post("/api/quenmk", async (req, res) => {
     // Gửi mail bất đồng bộ
     const msg = {
       to: user.email,
-      from: "no-reply@qlsukien.com",  // domain đã verify SendGrid
+      from: "githich462@gmail.com",  // domain đã verify SendGrid
       subject: "Khôi phục mật khẩu - QLSK",
       text: `Xin chào ${user.username}, mật khẩu tạm thời của bạn là: ${tempPassword}`,
       html: `<p>Xin chào <b>${user.username}</b>,</p>
@@ -817,6 +817,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
