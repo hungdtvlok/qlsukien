@@ -832,9 +832,10 @@ app.post("/api/quenmk", async (req, res) => {
     res.json({ message: "Đã gửi mật khẩu tạm thời về email của bạn!" });
 
   } catch (error) {
-    console.error("❌ Lỗi /api/quenmk:", error);
-    res.status(500).json({ message: "Lỗi server!" });
-  }
+  console.error("❌ Lỗi /api/quenmk:", error.message);
+  console.error(error.stack);
+  res.status(500).json({ message: "Lỗi server!", error: error.message });
+
 });
 
 
@@ -850,6 +851,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
