@@ -283,56 +283,6 @@ app.get("/api/events", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
-// lấy tên sự kiện chỗ công việc
-app.get("/api/eventnames", async (req, res) => {
-    try {
-        const events = await Event.find({}, "name"); // chỉ lấy trường name
-        res.json(events);
-    } catch (err) {
-        console.error("❌ Lỗi khi lấy tên sự kiện:", err);
-        res.status(500).json({ message: err.message });
-    }
-});
-
-// Lấy danh sách công việc của 1 sự kiện cụ thể
-app.get("/api/event/:eventId/tasks", async (req, res) => {
-    try {
-        const { eventId } = req.params;
-
-        // Lấy danh sách công việc (task) thuộc sự kiện
-        const tasks = await Task.find({ eventId });
-
-        // Lấy danh sách người đăng ký của sự kiện
-        const registrations = await Registration.find({ eventId }).populate("userId");
-
-        // Map người thực hiện theo userId
-        const userMap = {};
-        registrations.forEach(reg => {
-            if (reg.userId) {
-                userMap[reg.userId._id.toString()] = reg.userId.name || "Không rõ";
-            }
-        });
-
-        // Gắn người thực hiện vào từng công việc
-        const result = tasks.map(task => ({
-            _id: task._id,
-            name: task.name,
-            startTime: task.startTime,
-            endTime: task.endTime,
-            performer: userMap[task.userId?.toString()] || "Chưa phân công"
-        }));
-
-        res.json({
-            message: "Lấy danh sách công việc thành công",
-            count: result.length,
-            tasks: result
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Lỗi khi lấy công việc của sự kiện" });
-    }
-});
-
 
 // Tạo sự kiện (có startTime và endTime)
 app.post("/api/events", async (req, res) => {
@@ -402,6 +352,115 @@ app.delete("/api/events/:id", async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
+});
+
+
+// =================== Công việc ===================
+const taskSchema = new mongoose.Schema({
+  name: String,
+  startTime: String,
+  endTime: String,
+  performer: String
+}, { _id: true });
+
+const eventSchema = new mongoose.Schema({
+  name: String,
+  tasks: [taskSchema]
+}); 
+
+
+// lấy tên sự kiện chỗ công việc
+app.get("/api/eventnames", async (req, res) => {
+    try {
+        const events = await Event.find({}, "name"); // chỉ lấy trường name
+        res.json(events);
+    } catch (err) {
+        console.error("❌ Lỗi khi lấy tên sự kiện:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+// Lấy danh sách công việc của 1 sự kiện cụ thể
+app.get("/api/event/:eventId/tasks", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+
+    const tasks = event.tasks.map(task => ({
+      _id: task._id,
+      name: task.name,
+      startTime: task.startTime,
+      endTime: task.endTime,
+      performer: task.performer || "Chưa phân công"
+    }));
+
+    res.json({
+      message: "Lấy danh sách công việc thành công",
+      count: tasks.length,
+      tasks
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Lỗi khi lấy công việc của sự kiện" });
+  }
+});
+
+
+// POST thêm công việc
+app.post("/api/event/:eventId/tasks", async (req, res) => {
+  try {
+    const { name, startTime, endTime, performer } = req.body;
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+
+    const newTask = { name, startTime, endTime, performer };
+    event.tasks.push(newTask);
+    await event.save();
+
+    res.status(201).json({ message: "Thêm công việc thành công", task: newTask });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// PUT sửa công việc theo taskId
+app.put("/api/event/:eventId/tasks/:taskId", async (req, res) => {
+  try {
+    const { name, startTime, endTime, performer } = req.body;
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+
+    const task = event.tasks.id(req.params.taskId);
+    if (!task) return res.status(404).json({ message: "Không tìm thấy công việc" });
+
+    task.name = name || task.name;
+    task.startTime = startTime || task.startTime;
+    task.endTime = endTime || task.endTime;
+    task.performer = performer || task.performer;
+
+    await event.save();
+    res.json({ message: "Cập nhật công việc thành công", task });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// DELETE công việc theo taskId
+app.delete("/api/event/:eventId/tasks/:taskId", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+
+    const task = event.tasks.id(req.params.taskId);
+    if (!task) return res.status(404).json({ message: "Không tìm thấy công việc" });
+
+    task.remove();
+    await event.save();
+    res.json({ message: "Xóa công việc thành công" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 // ================== REGISTRATION SCHEMA ==================
@@ -937,6 +996,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
