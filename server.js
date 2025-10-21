@@ -363,7 +363,7 @@ const taskSchema = new mongoose.Schema({
   performer: String
 }, { _id: true });
 
-const eventSchema = new mongoose.Schema({
+const eventSchemaV2 = new mongoose.Schema({
   name: String,
   tasks: [taskSchema]
 }); 
@@ -996,6 +996,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
