@@ -283,7 +283,7 @@ app.get("/api/events", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
-
+// lấy tên sự kiện chỗ công việc
 app.get("/api/eventnames", async (req, res) => {
     try {
         const events = await Event.find({}, "name"); // chỉ lấy trường name
@@ -291,6 +291,45 @@ app.get("/api/eventnames", async (req, res) => {
     } catch (err) {
         console.error("❌ Lỗi khi lấy tên sự kiện:", err);
         res.status(500).json({ message: err.message });
+    }
+});
+
+// Lấy danh sách công việc của 1 sự kiện cụ thể
+app.get("/api/event/:eventId/tasks", async (req, res) => {
+    try {
+        const { eventId } = req.params;
+
+        // Lấy danh sách công việc (task) thuộc sự kiện
+        const tasks = await Task.find({ eventId });
+
+        // Lấy danh sách người đăng ký của sự kiện
+        const registrations = await Registration.find({ eventId }).populate("userId");
+
+        // Map người thực hiện theo userId
+        const userMap = {};
+        registrations.forEach(reg => {
+            if (reg.userId) {
+                userMap[reg.userId._id.toString()] = reg.userId.name || "Không rõ";
+            }
+        });
+
+        // Gắn người thực hiện vào từng công việc
+        const result = tasks.map(task => ({
+            _id: task._id,
+            name: task.name,
+            startTime: task.startTime,
+            endTime: task.endTime,
+            performer: userMap[task.userId?.toString()] || "Chưa phân công"
+        }));
+
+        res.json({
+            message: "Lấy danh sách công việc thành công",
+            count: result.length,
+            tasks: result
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Lỗi khi lấy công việc của sự kiện" });
     }
 });
 
@@ -898,6 +937,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
