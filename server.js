@@ -284,6 +284,16 @@ app.get("/api/events", async (req, res) => {
     }
 });
 
+app.get("/api/eventnames", async (req, res) => {
+    try {
+        const events = await Event.find({}, "name"); // chỉ lấy trường name
+        res.json(events);
+    } catch (err) {
+        console.error("❌ Lỗi khi lấy tên sự kiện:", err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
 
 // Tạo sự kiện (có startTime và endTime)
 app.post("/api/events", async (req, res) => {
@@ -888,6 +898,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
