@@ -409,18 +409,22 @@ app.get("/api/event/:eventId/tasks", async (req, res) => {
 app.post("/api/event/:eventId/tasks", async (req, res) => {
   try {
     const { name, startTime, endTime, performer } = req.body;
-   const event = await TaskEvent.findById(req.params.eventId);
-if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
 
-const newTask = { name, startTime, endTime, performer };
-event.tasks.push(newTask);
-await event.save();
+    const event = await Event.findById(req.params.eventId); // Event có tasks
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
 
-res.status(201).json({ message: "Thêm công việc thành công", task: newTask });
+    const newTask = { name, startTime, endTime, performer };
+    event.tasks.push(newTask);
+
+    await event.save();
+    res.status(201).json({ message: "Thêm công việc thành công", task: newTask });
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // PUT sửa công việc theo taskId
 app.put("/api/event/:eventId/tasks/:taskId", async (req, res) => {
@@ -994,6 +998,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
