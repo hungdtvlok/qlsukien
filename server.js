@@ -47,6 +47,14 @@ const userSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now },
     sole: { type: String, default: "User" }
 });
+
+const taskSchema = new mongoose.Schema({
+  name: String,
+  startTime: String,
+  endTime: String,
+  performer: String
+}, { _id: true });
+
 const eventSchema = new mongoose.Schema({
     name: { type: String, required: true },
     startTime: { type: Date, required: true },
@@ -357,13 +365,6 @@ app.delete("/api/events/:id", async (req, res) => {
 
 
 // =================== Công việc ===================
-const taskSchema = new mongoose.Schema({
-  name: String,
-  startTime: String,
-  endTime: String,
-  performer: String
-}, { _id: true });
-
 
 
 
@@ -998,6 +999,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
