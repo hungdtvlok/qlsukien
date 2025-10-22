@@ -49,11 +49,12 @@ const userSchema = new mongoose.Schema({
 });
 
 const taskSchema = new mongoose.Schema({
-  name: String,
-  startTime: String,
-  endTime: String,
-  performer: String
-}, { _id: true });
+  name: { type: String, required: true },
+  startTime: { type: Date, required: true },
+  endTime: { type: Date, required: true },
+  performer: { type: String, default: "Chưa phân công" }
+});
+
 
 const eventSchema = new mongoose.Schema({
     name: { type: String, required: true },
@@ -414,11 +415,21 @@ app.post("/api/event/:eventId/tasks", async (req, res) => {
     const event = await Event.findById(req.params.eventId); // Event có tasks
     if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
 
-    const newTask = { name, startTime, endTime, performer };
-    event.tasks.push(newTask);
+    const newTask = {
+  name,
+  startTime: startTime ? new Date(startTime) : null,
+  endTime: endTime ? new Date(endTime) : null,
+  performer: performer || "Chưa phân công"
+};
 
-    await event.save();
-    res.status(201).json({ message: "Thêm công việc thành công", task: newTask });
+// kiểm tra bắt buộc
+if (!newTask.name || !newTask.startTime || !newTask.endTime) {
+  return res.status(400).json({ message: "Thiếu thông tin bắt buộc của công việc" });
+}
+
+event.tasks.push(newTask);
+await event.save();
+res.status(201).json({ message: "Thêm công việc thành công", task: newTask });
 
   } catch (err) {
     console.error(err);
@@ -999,6 +1010,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
