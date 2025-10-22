@@ -55,7 +55,8 @@ const eventSchema = new mongoose.Schema({
     description: { type: String },
     createdAt: { type: Date, default: Date.now },
     maxParticipants: { type: Number, default: 100 }, // số lượng tối đa
-    registeredCount: { type: Number, default: 0 }    // số lượng đã đăng ký
+    registeredCount: { type: Number, default: 0 },    // số lượng đã đăng ký
+    tasks: [taskSchema] 
 });
 
 const Event = mongoose.model("Event", eventSchema);
@@ -363,13 +364,7 @@ const taskSchema = new mongoose.Schema({
   performer: String
 }, { _id: true });
 
-const eventSchemaV2 = new mongoose.Schema({
-  name: String,
-  tasks: [taskSchema]
-}); 
 
-const EventModel = mongoose.model("Event", eventSchema);
-const TaskEvent = mongoose.model("TaskEvent", eventSchemaV2);
 
 
 // lấy tên sự kiện chỗ công việc
@@ -414,14 +409,14 @@ app.get("/api/event/:eventId/tasks", async (req, res) => {
 app.post("/api/event/:eventId/tasks", async (req, res) => {
   try {
     const { name, startTime, endTime, performer } = req.body;
-    const event = await Event.findById(req.params.eventId);
-    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+   const event = await TaskEvent.findById(req.params.eventId);
+if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
 
-    const newTask = { name, startTime, endTime, performer };
-    event.tasks.push(newTask);
-    await event.save();
+const newTask = { name, startTime, endTime, performer };
+event.tasks.push(newTask);
+await event.save();
 
-    res.status(201).json({ message: "Thêm công việc thành công", task: newTask });
+res.status(201).json({ message: "Thêm công việc thành công", task: newTask });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -999,6 +994,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
