@@ -367,7 +367,18 @@ app.delete("/api/events/:id", async (req, res) => {
 
 // =================== Công việc ===================
 
+// API lấy danh sách người tham gia theo eventId
+app.get("/api/event/:eventId/participants", async (req, res) => {
+    const { eventId } = req.params;
 
+    try {
+        const participants = await Participant.find({ eventId: eventId }, "fullName email");
+        res.json({ participants });
+    } catch (err) {
+        console.error("Lỗi khi lấy danh sách người tham gia:", err);
+        res.status(500).json({ message: "Lỗi server" });
+    }
+});
 
 
 // Lấy tên sự kiện + ngày bắt đầu + ngày kết thúc
@@ -1038,6 +1049,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
