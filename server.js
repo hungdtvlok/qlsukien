@@ -476,16 +476,22 @@ app.delete("/api/event/:eventId/tasks/:taskId", async (req, res) => {
     const event = await Event.findById(req.params.eventId);
     if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
 
+    if (!event.tasks || event.tasks.length === 0)
+      return res.status(404).json({ message: "Sự kiện chưa có công việc nào" });
+
     const task = event.tasks.id(req.params.taskId);
     if (!task) return res.status(404).json({ message: "Không tìm thấy công việc" });
 
-    task.remove();
+    task.remove(); // Xóa subdocument
     await event.save();
+
     res.json({ message: "Xóa công việc thành công" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 });
+
 
 // ================== REGISTRATION SCHEMA ==================
 const registrationSchema = new mongoose.Schema({
@@ -1020,6 +1026,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
