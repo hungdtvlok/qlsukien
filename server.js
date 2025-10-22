@@ -368,7 +368,8 @@ const eventSchemaV2 = new mongoose.Schema({
   tasks: [taskSchema]
 }); 
 
-const Event = mongoose.model("Event", eventSchemaV2);
+const EventModel = mongoose.model("Event", eventSchema);
+const TaskEvent = mongoose.model("TaskEvent", eventSchemaV2);
 
 
 // lấy tên sự kiện chỗ công việc
@@ -998,6 +999,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
