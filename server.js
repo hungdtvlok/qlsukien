@@ -472,21 +472,41 @@ app.put("/api/event/:eventId/tasks/:taskId", async (req, res) => {
 
 // DELETE công việc theo taskId
 app.delete("/api/event/:eventId/tasks/:taskId", async (req, res) => {
-  console.log("DELETE taskId:", req.params.taskId);  // <-- thêm dòng này
-  console.log("DELETE eventId:", req.params.eventId);
+  const { eventId, taskId } = req.params;
+  console.log("=== DELETE REQUEST ===");
+  console.log("eventId:", eventId);
+  console.log("taskId:", taskId);
 
   try {
-    const event = await Event.findById(req.params.eventId);
-    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+    const event = await Event.findById(eventId);
+    if (!event) {
+      console.log("Không tìm thấy sự kiện!");
+      return res.status(404).json({ message: "Không tìm thấy sự kiện" });
+    }
 
-    const task = event.tasks.id(req.params.taskId);
-    if (!task) return res.status(404).json({ message: "Không tìm thấy công việc" });
+    // Log danh sách task _id hiện có
+    console.log("Danh sách task _id hiện tại:", event.tasks.map(t => t._id.toString()));
 
+    // Tìm task trong array
+    const task = event.tasks.id(taskId);
+    if (!task) {
+      console.log("Không tìm thấy công việc với taskId:", taskId);
+      return res.status(404).json({ message: "Không tìm thấy công việc" });
+    }
+
+    console.log("Task tìm thấy:", task);
+
+    // Xóa task
     task.remove();
+    console.log("Task đã remove, tasks còn lại:", event.tasks.map(t => t._id.toString()));
+
+    // Lưu lại event
     await event.save();
-    res.json({ message: "Xóa công việc thành công" });
+    console.log("Event đã save sau khi xóa task");
+
+    res.json({ message: "Xóa công việc thành công", tasks: event.tasks });
   } catch (err) {
-    console.error(err);
+    console.error("Lỗi khi xóa task:", err);
     res.status(500).json({ message: err.message });
   }
 });
@@ -1025,6 +1045,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
