@@ -473,43 +473,34 @@ app.put("/api/event/:eventId/tasks/:taskId", async (req, res) => {
 // DELETE công việc theo taskId
 app.delete("/api/event/:eventId/tasks/:taskId", async (req, res) => {
   const { eventId, taskId } = req.params;
-  console.log("=== DELETE REQUEST ===");
-  console.log("eventId:", eventId);
-  console.log("taskId:", taskId);
+  console.log("DELETE taskId:", taskId, "eventId:", eventId);
 
   try {
     const event = await Event.findById(eventId);
-    if (!event) {
-      console.log("Không tìm thấy sự kiện!");
-      return res.status(404).json({ message: "Không tìm thấy sự kiện" });
-    }
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
 
-    // Log danh sách task _id hiện có
-    console.log("Danh sách task _id hiện tại:", event.tasks.map(t => t._id.toString()));
+    // Debug: show tất cả task _id
+    console.log("Tasks hiện tại:");
+    event.tasks.forEach(t => console.log(t._id.toString()));
 
-    // Tìm task trong array
-    const task = event.tasks.id(taskId);
-    if (!task) {
-      console.log("Không tìm thấy công việc với taskId:", taskId);
+    // Xóa task đúng kiểu
+    const taskIndex = event.tasks.findIndex(t => t._id.toString() === taskId.toString());
+    if (taskIndex === -1) {
+      console.log("Không tìm thấy task với _id:", taskId);
       return res.status(404).json({ message: "Không tìm thấy công việc" });
     }
 
-    console.log("Task tìm thấy:", task);
-
-    // Xóa task
-    task.remove();
-    console.log("Task đã remove, tasks còn lại:", event.tasks.map(t => t._id.toString()));
-
-    // Lưu lại event
+    event.tasks.splice(taskIndex, 1); // xóa
     await event.save();
-    console.log("Event đã save sau khi xóa task");
 
+    console.log("Xóa task thành công:", taskId);
     res.json({ message: "Xóa công việc thành công", tasks: event.tasks });
   } catch (err) {
     console.error("Lỗi khi xóa task:", err);
     res.status(500).json({ message: err.message });
   }
 });
+
 
 
 // ================== REGISTRATION SCHEMA ==================
@@ -1045,6 +1036,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
