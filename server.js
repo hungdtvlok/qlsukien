@@ -472,6 +472,9 @@ app.put("/api/event/:eventId/tasks/:taskId", async (req, res) => {
 
 // DELETE công việc theo taskId
 app.delete("/api/event/:eventId/tasks/:taskId", async (req, res) => {
+  console.log("DELETE taskId:", req.params.taskId);  // <-- thêm dòng này
+  console.log("DELETE eventId:", req.params.eventId);
+
   try {
     const event = await Event.findById(req.params.eventId);
     if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
@@ -483,10 +486,10 @@ app.delete("/api/event/:eventId/tasks/:taskId", async (req, res) => {
     await event.save();
     res.json({ message: "Xóa công việc thành công" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: err.message });
   }
 });
-
 
 
 // ================== REGISTRATION SCHEMA ==================
@@ -1022,6 +1025,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
