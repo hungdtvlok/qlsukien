@@ -471,44 +471,22 @@ app.put("/api/event/:eventId/tasks/:taskId", async (req, res) => {
 });
 
 // DELETE công việc theo taskId
-router.delete("/api/event/:eventId/tasks/:taskId", async (req, res) => {
-  const { eventId, taskId } = req.params;
-
+app.delete("/api/event/:eventId/tasks/:taskId", async (req, res) => {
   try {
-    const event = await Event.findById(eventId);
+    const event = await Event.findById(req.params.eventId);
     if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
 
-    // --- 1. Thử xóa nếu tasks là embedded subdocument ---
-    let task = null;
-    try {
-      task = event.tasks.id(mongoose.Types.ObjectId(taskId));
-    } catch (err) {
-      // taskId không hợp lệ ObjectId
-    }
+    const task = event.tasks.id(req.params.taskId);
+    if (!task) return res.status(404).json({ message: "Không tìm thấy công việc" });
 
-    if (task) {
-      task.remove();
-      await event.save();
-      return res.json({ message: "Xóa công việc thành công (embedded subdocument)" });
-    }
-
-    // --- 2. Nếu tasks là mảng ObjectId tham chiếu ---
-    const updated = await Event.findByIdAndUpdate(
-      eventId,
-      { $pull: { tasks: { _id: taskId } } }, // hoặc nếu tasks là mảng ObjectId, dùng: { $pull: { tasks: taskId } }
-      { new: true }
-    );
-
-    if (updated) {
-      return res.json({ message: "Xóa công việc thành công (ObjectId array)" });
-    }
-
-    res.status(404).json({ message: "Không tìm thấy công việc" });
+    task.remove();
+    await event.save();
+    res.json({ message: "Xóa công việc thành công" });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: err.message });
   }
 });
+
 
 
 // ================== REGISTRATION SCHEMA ==================
@@ -1044,6 +1022,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
