@@ -369,13 +369,15 @@ app.delete("/api/events/:id", async (req, res) => {
 
 
 
-// lấy tên sự kiện chỗ công việc
+
+// Lấy tên sự kiện + ngày bắt đầu + ngày kết thúc
 app.get("/api/eventnames", async (req, res) => {
     try {
-        const events = await Event.find({}, "name"); // chỉ lấy trường name
+        // Lấy các trường: name, startTime, endTime
+        const events = await Event.find({}, "name startTime endTime");
         res.json(events);
     } catch (err) {
-        console.error("❌ Lỗi khi lấy tên sự kiện:", err);
+        console.error("❌ Lỗi khi lấy thông tin sự kiện:", err);
         res.status(500).json({ message: err.message });
     }
 });
@@ -1036,6 +1038,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
