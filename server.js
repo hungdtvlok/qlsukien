@@ -368,23 +368,22 @@ app.delete("/api/events/:id", async (req, res) => {
 // =================== Công việc ===================
 
 // Lấy danh sách người tham gia theo eventName
-app.get("/api/event/byName/:eventName/participants", async (req, res) => {
-    const { eventName } = req.params;
+app.get("/api/event/byName/participants", async (req, res) => {
+    const eventName = req.query.name; // lấy từ query param
 
     try {
-        // Tìm event theo name
         const event = await Event.findOne({ name: eventName });
         if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện" });
 
-        // Lấy participant theo eventId
         const participants = await Participant.find({ eventId: event._id }, "fullName email");
         res.json({ participants });
 
     } catch (err) {
-        console.error("Lỗi khi lấy danh sách người tham gia:", err);
+        console.error(err);
         res.status(500).json({ message: "Lỗi server" });
     }
 });
+
 
 
 
@@ -1056,6 +1055,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
