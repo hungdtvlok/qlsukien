@@ -165,6 +165,8 @@ app.post("/api/login", async (req, res) => {
 app.get("/api/nhanvien", async (req, res) => {
     try {
         const { username } = req.query; // Lấy username từ query param
+        res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+
         let users;
 
         if (username) {
@@ -1054,6 +1056,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
