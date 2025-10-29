@@ -166,31 +166,25 @@ app.get("/api/nhanvien", async (req, res) => {
   try {
     const { username } = req.query;
 
-    // ⚙️ Tắt cache HTTP (đảm bảo client luôn nhận dữ liệu mới)
+    // ⚙️ Tắt cache HTTP
     res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
 
-    // ⚙️ Đọc dữ liệu mới nhất từ MongoDB (node chính)
+    // ⚙️ Ép MongoDB đọc bản mới nhất từ primary
+    const readPreference = "primary";
+
     let users;
     if (username) {
-      
-      users = await User.find({ username })
-        .read("primary")
-        .lean();
+      users = await User.find({ username }).read(readPreference).lean();
     } else {
-      users = await User.find({})
-        .read("primary")
-        .lean();
+      users = await User.find().read(readPreference).lean();
     }
 
     res.json(users);
-  } catch (err) {
-    console.error("❌ Lỗi lấy nhân viên:", err);
-    res.status(500).json({ message: "Server error: " + err.message });
+  } catch (error) {
+    console.error("Lỗi /api/nhanvien:", error);
+    res.status(500).json({ error: "Lỗi server" });
   }
 });
-
-
-
 
 // ================== API SỬA THÔNG TIN NHÂN VIÊN ==================
 app.post("/api/updateNhanVien", async (req, res) => {
@@ -1073,6 +1067,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
