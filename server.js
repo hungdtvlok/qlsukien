@@ -159,26 +159,28 @@ app.post("/api/login", async (req, res) => {
         res.status(500).json({ message: "Server error: " + err.message });
     }
 });
+
 // ================== API LẤY NHÂN VIÊN ==================
 app.get("/api/nhanvien", async (req, res) => {
-    try {
-        const { username } = req.query; // Lấy username từ query param
-        let users;
+  try {
+    const { username } = req.query; // Lấy username từ query param
+    let users;
 
-        if (username) {
-            // Nếu có username, chỉ trả về user đó
-            users = await User.find({ username });
-        } else {
-            // Nếu không có username, trả về tất cả user
-            users = await User.find();
-        }
-
-        res.json(users);
-    } catch (err) {
-        console.error("❌ Lỗi lấy nhân viên:", err);
-        res.status(500).json({ message: "Server error: " + err.message });
+    if (username) {
+      // Nếu có username, chỉ trả về user đó, ẩn mật khẩu
+      users = await User.find({ username }, { password: 0 });
+    } else {
+      // Nếu không có username, trả về tất cả user, ẩn mật khẩu
+      users = await User.find({}, { password: 0 });
     }
+
+    res.json(users);
+  } catch (err) {
+    console.error("❌ Lỗi lấy nhân viên:", err);
+    res.status(500).json({ message: "Server error: " + err.message });
+  }
 });
+
 
 // ================== API SỬA THÔNG TIN NHÂN VIÊN ==================
 app.post("/api/updateNhanVien", async (req, res) => {
@@ -1051,6 +1053,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
