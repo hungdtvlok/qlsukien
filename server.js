@@ -918,11 +918,6 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 
 // ================== API QUÊN MẬT KHẨU ==================
-const sgMail = require("@sendgrid/mail");
-const bcrypt = require("bcryptjs");
-
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
 app.post("/api/quenmk", async (req, res) => {
   try {
     const { username } = req.body;
@@ -1056,6 +1051,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
