@@ -214,32 +214,25 @@ app.post("/api/updateNhanVien", async (req, res) => {
 
 // ================== API ĐỔI MẬT KHẨU ==================
 app.post("/api/changePassword", async (req, res) => {
-  try {
-    const { username, newPassword } = req.body;
+    try {
+        const { username, newPassword } = req.body;
 
-    if (!username || !newPassword) {
-      return res.status(400).json({ error: "Thiếu dữ liệu" });
+        if (!username || !newPassword) return res.status(400).json({ message: "Thiếu thông tin đổi mật khẩu" });
+
+        const user = await User.findOne({ username });
+        if (!user) return res.status(404).json({ message: "Người dùng không tồn tại" });
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        user.password = hashedPassword;
+        user.updatedAt = new Date();
+
+        await user.save();
+        res.json({ message: "Đổi mật khẩu thành công" });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Server error: " + err.message });
     }
-
-    // ⚙️ Ép đọc từ primary node, tránh đọc cache secondary
-    const user = await User.findOneAndUpdate(
-      { username },
-      { password: newPassword, updatedAt: new Date() },
-      { new: true, readPreference: "primary" } // <- đọc bản mới nhất
-    ).lean();
-
-    if (!user) {
-      return res.status(404).json({ error: "Không tìm thấy người dùng" });
-    }
-
-    // ⚙️ Tắt cache trình duyệt
-    res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
-
-    res.json({ message: "Đổi mật khẩu thành công", user });
-  } catch (error) {
-    console.error("Lỗi đổi mật khẩu:", error);
-    res.status(500).json({ error: "Lỗi server" });
-  }
 });
 
 // ================== ảnh ==================
@@ -1061,6 +1054,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
