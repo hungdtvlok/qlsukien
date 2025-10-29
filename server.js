@@ -163,26 +163,23 @@ app.post("/api/login", async (req, res) => {
 
 // ================== API LẤY NHÂN VIÊN ==================
 app.get("/api/nhanvien", async (req, res) => {
-  try {
-    const { username } = req.query;
+    try {
+        const { username } = req.query; // Lấy username từ query param
+        let users;
 
-    // 🚫 Tắt cache HTTP
-    res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
-    res.set("Pragma", "no-cache");
+        if (username) {
+            // Nếu có username, chỉ trả về user đó
+            users = await User.find({ username });
+        } else {
+            // Nếu không có username, trả về tất cả user
+            users = await User.find();
+        }
 
-    let users;
-    if (username) {
-      // ⚙️ Ép MongoDB đọc dữ liệu mới nhất từ disk
-      users = await User.find({ username }).lean();
-    } else {
-      users = await User.find().lean();
+        res.json(users);
+    } catch (err) {
+        console.error("❌ Lỗi lấy nhân viên:", err);
+        res.status(500).json({ message: "Server error: " + err.message });
     }
-
-    res.json(users);
-  } catch (err) {
-    console.error("❌ Lỗi lấy nhân viên:", err);
-    res.status(500).json({ message: "Server error: " + err.message });
-  }
 });
 
 
@@ -1058,6 +1055,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
