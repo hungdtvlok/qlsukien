@@ -916,46 +916,62 @@ const crypto = require("crypto");
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-// API quên mật khẩu
+
+// ================== API QUÊN MẬT KHẨU ==================
+const sgMail = require("@sendgrid/mail");
+const bcrypt = require("bcryptjs");
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 app.post("/api/quenmk", async (req, res) => {
   try {
     const { username } = req.body;
-    if (!username) return res.status(400).json({ message: "Thiếu tên tài khoản!" });
+    if (!username)
+      return res.status(400).json({ message: "Thiếu tên tài khoản!" });
 
-    // Tìm user
-    const user = await User.findOne({ username: { $regex: `^${username.trim()}$`, $options: "i" } });
-    if (!user) return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
-    if (!user.email) return res.status(400).json({ message: "Tài khoản chưa có email!" });
+    // Tìm user theo username (không phân biệt hoa thường)
+    const user = await User.findOne({
+      username: { $regex: `^${username.trim()}$`, $options: "i" },
+    });
+    if (!user)
+      return res.status(404).json({ message: "Không tìm thấy tài khoản!" });
+    if (!user.email)
+      return res.status(400).json({ message: "Tài khoản chưa có email!" });
 
-    // Tạo mật khẩu tạm thời
+    // 🔐 Tạo mật khẩu tạm thời
     const tempPassword = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // Mã hoá mật khẩu
     const hashedPassword = await bcrypt.hash(tempPassword, 10);
     user.password = hashedPassword;
+
+    // ✅ Lưu thật sự vào MongoDB
     await user.save();
 
-   res.json({ message: "Email đã gửi thành công!" });
-
-    // Gửi mail bất đồng bộ
+    // Gửi email và chỉ trả phản hồi khi gửi xong
     const msg = {
       to: user.email,
-      from: "githich462@gmail.com",  // domain đã verify SendGrid
+      from: "githich462@gmail.com", // email đã verify
       subject: "Khôi phục mật khẩu - QLSK",
-      text: `Xin chào ${user.username}, mật khẩu tạm thời của bạn là: ${tempPassword}`,
-      html: `<p>Xin chào <b>${user.username}</b>,</p>
-             <p>Mật khẩu tạm thời của bạn là: <b>${tempPassword}</b></p>
-             <p>Hãy đăng nhập và đổi mật khẩu ngay.</p>`,
+      html: `
+        <p>Xin chào <b>${user.username}</b>,</p>
+        <p>Mật khẩu tạm thời của bạn là: <b>${tempPassword}</b></p>
+        <p>Hãy đăng nhập và đổi mật khẩu ngay.</p>
+      `,
     };
 
-    sgMail.send(msg)
-      .then(() => console.log(`📧 Email gửi thành công tới ${user.email}`))
-      .catch(err => console.error("❌ Lỗi gửi email:", err.response ? err.response.body : err));
+    // ⏳ Đợi gửi mail xong mới phản hồi
+    await sgMail.send(msg);
+    console.log(`📧 Email gửi thành công tới ${user.email}`);
 
+    // ✅ Trả kết quả sau khi cả hai bước hoàn tất
+    res.json({ message: "Mật khẩu tạm thời đã được gửi tới email của bạn!" });
   } catch (err) {
     console.error("❌ Lỗi API quên mật khẩu:", err);
     res.status(500).json({ message: "Lỗi server: " + err.message });
   }
-
 });
+
 
 
 
@@ -1040,6 +1056,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
