@@ -607,11 +607,22 @@ app.delete("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
 // tải tin nhắn lên
 app.post("/api/chat", async (req, res) => {
     try {
-        const { sender, message, eventId } = req.body;
-        if (!sender || !message || !eventId) 
-            return res.status(400).json({ message: "Thiếu thông tin chat" });
+        const { sender, content, username, eventId } = req.body;
 
-        const chat = new Chat({ sender, message, eventId });
+        // Kiểm tra đủ thông tin
+        if (!sender || !content || !username || !eventId) {
+            return res.status(400).json({ message: "Thiếu thông tin chat" });
+        }
+
+        // Tạo chat mới
+        const chat = new Chat({ 
+            sender, 
+            content, 
+            username, 
+            eventId, 
+            timestamp: new Date().toISOString() 
+        });
+
         await chat.save();
 
         res.json({ message: "Đã gửi", chat });
@@ -619,6 +630,7 @@ app.post("/api/chat", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
+
 // lấy tin nhắn
 app.get("/api/chat/:eventId", async (req, res) => {
     try {
@@ -1216,6 +1228,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
