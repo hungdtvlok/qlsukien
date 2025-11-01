@@ -976,54 +976,31 @@ app.delete("/api/participants/:id", async (req, res) => {
 
 
 
+
 // ================== API THỐNG KÊ NGƯỜI THAM GIA + CHI TIÊU ==================
 app.get("/api/statistics", async (req, res) => {
   try {
-    //  Thống kê số người tham gia theo sự kiện
-    const participants = await Participant.aggregate([
-      { 
-        $group: { 
-          _id: "$eventName", 
-          count: { $sum: 1 } 
-        } 
-      }
-    ]);
+    // Lấy toàn bộ sự kiện
+    const events = await Event.find();
 
-    //  Thống kê tổng chi tiêu theo sự kiện
-    const expenses = await ChiTieu.aggregate([
-      { 
-        $group: { 
-          _id: "$eventName", 
-          totalExpense: { $sum: "$money" } 
-        } 
-      }
-    ]);
+    // Duyệt qua từng sự kiện để tính toán
+    const merged = events.map(ev => {
+      // Đếm số người tham gia (registeredCount)
+      const count = ev.registeredCount || 0;
 
-    //  Gộp 2 kết quả dựa theo eventName
-    const merged = participants.map(p => {
-      const expense = expenses.find(e => e._id === p._id);
+      // Tính tổng chi tiêu của sự kiện
+      const totalExpense = ev.expenses?.reduce((sum, exp) => sum + (exp.money || 0), 0);
+
       return {
-        eventName: p._id,
-        count: p.count,
-        totalExpense: expense ? expense.totalExpense : 0
+        eventName: ev.name,
+        count,
+        totalExpense
       };
     });
 
-    // . Thêm các sự kiện có chi tiêu nhưng chưa có người tham gia
-    expenses.forEach(e => {
-      if (!merged.find(m => m.eventName === e._id)) {
-        merged.push({
-          eventName: e._id,
-          count: 0,
-          totalExpense: e.totalExpense
-        });
-      }
-    });
-
-    //  Sắp xếp theo tên sự kiện
+    // Sắp xếp theo tên sự kiện
     merged.sort((a, b) => a.eventName.localeCompare(b.eventName));
 
-    //  Trả kết quả về client
     res.json({
       message: "✅ Lấy thống kê thành công",
       statistics: merged
@@ -1034,6 +1011,7 @@ app.get("/api/statistics", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 
 
@@ -1178,6 +1156,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
