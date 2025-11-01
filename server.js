@@ -72,6 +72,7 @@ const eventSchema = new mongoose.Schema({
     maxParticipants: { type: Number, default: 100 }, // số lượng tối đa
     registeredCount: { type: Number, default: 0 },    // số lượng đã đăng ký
     tasks: [taskSchema] 
+    expenses: [expenseSchema]
 });
 
 const Event = mongoose.model("Event", eventSchema);
@@ -1132,6 +1133,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
