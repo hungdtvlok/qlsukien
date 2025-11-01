@@ -62,9 +62,11 @@ const expenseSchema = new mongoose.Schema({
 });
 //chat
 const chatSchema = new mongoose.Schema({
-  sender: { type: String, required: true }, // ai gửi
-    message: { type: String, required: true },
-    createdAt: { type: Date, default: Date.now }
+  sender: { type: String, required: true },   // "participant" hoặc "organizer"
+  message: { type: String, required: true },  // nội dung tin nhắn
+  username: { type: String, required: true }, // tên người gửi
+  eventId: { type: String, required: true },  // ID sự kiện
+  createdAt: { type: Date, default: Date.now }
 });
 
 
@@ -1230,6 +1232,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
