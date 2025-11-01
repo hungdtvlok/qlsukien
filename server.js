@@ -975,11 +975,11 @@ app.delete("/api/participants/:id", async (req, res) => {
 });
 
 
-// ================== API THỐNG KÊ NGƯỜI THAM GIA ==================
+
 // ================== API THỐNG KÊ NGƯỜI THAM GIA + CHI TIÊU ==================
 app.get("/api/statistics", async (req, res) => {
   try {
-    // 🟩 1. Thống kê số người tham gia theo sự kiện
+    //  Thống kê số người tham gia theo sự kiện
     const participants = await Participant.aggregate([
       { 
         $group: { 
@@ -989,7 +989,7 @@ app.get("/api/statistics", async (req, res) => {
       }
     ]);
 
-    // 🟦 2. Thống kê tổng chi tiêu theo sự kiện
+    //  Thống kê tổng chi tiêu theo sự kiện
     const expenses = await ChiTieu.aggregate([
       { 
         $group: { 
@@ -999,7 +999,7 @@ app.get("/api/statistics", async (req, res) => {
       }
     ]);
 
-    // 🟨 3. Gộp 2 kết quả dựa theo eventName
+    //  Gộp 2 kết quả dựa theo eventName
     const merged = participants.map(p => {
       const expense = expenses.find(e => e._id === p._id);
       return {
@@ -1009,7 +1009,7 @@ app.get("/api/statistics", async (req, res) => {
       };
     });
 
-    // 🟧 4. Thêm các sự kiện có chi tiêu nhưng chưa có người tham gia
+    // . Thêm các sự kiện có chi tiêu nhưng chưa có người tham gia
     expenses.forEach(e => {
       if (!merged.find(m => m.eventName === e._id)) {
         merged.push({
@@ -1020,10 +1020,10 @@ app.get("/api/statistics", async (req, res) => {
       }
     });
 
-    // 🟩 5. Sắp xếp theo tên sự kiện
+    //  Sắp xếp theo tên sự kiện
     merged.sort((a, b) => a.eventName.localeCompare(b.eventName));
 
-    // 🟦 6. Trả kết quả về client
+    //  Trả kết quả về client
     res.json({
       message: "✅ Lấy thống kê thành công",
       statistics: merged
@@ -1178,6 +1178,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
