@@ -60,6 +60,15 @@ const expenseSchema = new mongoose.Schema({
   money: { type: Number, required: true },
   createdAt: { type: Date, default: Date.now }
 });
+//chat
+const chatSchema = new mongoose.Schema({
+  eventId: { type: String, required: true },    // ID sự kiện
+  sender: { type: String, required: true },     // username người gửi
+  role: { type: String, default: "participant" }, // participant/admin
+  message: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now }
+});
+
 
 
 const eventSchema = new mongoose.Schema({
@@ -72,13 +81,14 @@ const eventSchema = new mongoose.Schema({
     maxParticipants: { type: Number, default: 100 }, // số lượng tối đa
     registeredCount: { type: Number, default: 0 },    // số lượng đã đăng ký
     tasks: [taskSchema] ,
-    expenses: [expenseSchema]
+    expenses: [expenseSchema],
+    chats: [chatSchema]
 });
 
 const Event = mongoose.model("Event", eventSchema);
 const User = mongoose.model("User", userSchema);
 const ChiTieu = mongoose.model("ChiTieu", expenseSchema);
-
+const Chat = mongoose.model("Chat", chatSchema)
 
 // ================== API REGISTER ==================
 app.post("/api/register", async (req, res) => {
@@ -1179,6 +1189,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
