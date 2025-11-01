@@ -977,32 +977,38 @@ app.delete("/api/participants/:id", async (req, res) => {
 
 // ================== API THỐNG KÊ NGƯỜI THAM GIA ==================
 app.get("/api/statistics", async (req, res) => {
-    try {
-        const result = await Participant.aggregate([
-            // Nhóm theo tên sự kiện và đếm số người tham gia
-            { $group: { _id: "$eventName", count: { $sum: 1 } } },
-            // Sắp xếp theo tên sự kiện (bảng chữ cái A → Z)
-            { $sort: { _id: 1 } }
-        ]);
+  try {
+    // Lấy thống kê số người tham gia
+    const participants = await Participant.aggregate([
+      { $group: { _id: "$eventName", count: { $sum: 1 } } }
+    ]);
 
-        res.json({
-            message: "✅ Lấy thống kê thành công",
-            statistics: result.map(r => ({
-                eventName: r._id,
-                count: r.count
-            }))
-        });
-    } catch (err) {
-        console.error("❌ Lỗi khi thống kê:", err);
-        res.status(500).json({ message: err.message });
-    }
+    // Lấy tổng chi tiêu của từng sự kiện
+    const expenses = await ChiTieu.aggregate([
+      { $group: { _id: "$eventName", totalExpense: { $sum: "$money" } } }
+    ]);
+
+    // Gộp 2 mảng participants + expenses lại thành 1 kết quả
+    const merged = participants.map(p => {
+      const expense = expenses.find(e => e._id === p._id);
+      return {
+        eventName: p._id,
+        count: p.count,
+        totalExpense: expense ? expense.totalExpense : 0
+      };
+    });
+
+    // Trả về kết quả
+    res.json({
+      message: "✅ Lấy thống kê thành công",
+      statistics: merged.sort((a, b) => a.eventName.localeCompare(b.eventName))
+    });
+
+  } catch (err) {
+    console.error("❌ Lỗi khi thống kê:", err);
+    res.status(500).json({ message: err.message });
+  }
 });
-
-
-
-
-
-
 
 
 // ================== API QUÊN MẬT KHẨU ==================
@@ -1146,6 +1152,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
