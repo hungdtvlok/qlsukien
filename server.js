@@ -609,34 +609,24 @@ app.delete("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
 // tải tin nhắn lên
 app.post("/api/chat", async (req, res) => {
     try {
-        console.log("BODY NHẬN ĐƯỢC:", req.body); // log body gửi lên
-
-        const { sender, content, username, eventId } = req.body;
-
-        // Kiểm tra đủ thông tin
-        if (!sender || !content || !username || !eventId) {
-            console.error("THIẾU THÔNG TIN CHAT:", req.body);
+        const { sender, message, username, eventId } = req.body; // vẫn message
+        if (!sender || !message || !username || !eventId) {
             return res.status(400).json({ message: "Thiếu thông tin chat" });
         }
-
-        // Tạo chat mới
         const chat = new Chat({ 
             sender, 
-            content, 
+            message,   
             username, 
             eventId, 
             timestamp: new Date().toISOString() 
         });
-
         await chat.save();
-
-        console.log("CHAT ĐÃ LƯU:", chat); // log chat lưu thành công
         res.json({ message: "Đã gửi", chat });
     } catch (err) {
-        console.error("LỖI GỬI CHAT:", err.message, err);
         res.status(500).json({ message: err.message });
     }
 });
+
 
 // lấy tin nhắn
 app.get("/api/chat/:eventId", async (req, res) => {
@@ -1240,6 +1230,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
