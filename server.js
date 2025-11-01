@@ -515,6 +515,11 @@ app.delete("/api/event/:eventId/tasks/:taskId", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+// =================== CHI TIÊU ===================
+
+
+
+
 
 
 // ================== API LẤY DANH SÁCH CHI TIÊU ==================
@@ -529,21 +534,29 @@ app.get("/api/event/:eventId/expenses", async (req, res) => {
 });
 
 // ================== API THÊM CHI TIÊU ==================
-app.post("/api/event/:eventId/expenses", async (req, res) => {
+
+  app.post("/api/event/:eventId/expenses", async (req, res) => {
   try {
     const { name, money } = req.body;
     const event = await Event.findById(req.params.eventId);
     if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
 
+    // Tạo khoản chi tiêu mới
     const newExpense = { name, money };
     event.expenses.push(newExpense);
     await event.save();
 
-    res.json({ message: "Thêm thành công", expense: newExpense });
+    // 🔹 Lấy lại phần tử vừa thêm (có _id do Mongo tạo)
+    const addedExpense = event.expenses[event.expenses.length - 1];
+
+    // 🔹 Trả về đúng dữ liệu client cần
+    res.json({ message: "Thêm thành công", expense: addedExpense });
   } catch (error) {
+    console.error("Lỗi khi thêm chi tiêu:", error);
     res.status(500).json({ message: "Lỗi khi thêm chi tiêu", error });
   }
 });
+
 
 // ================== API CẬP NHẬT CHI TIÊU ==================
 app.put("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
@@ -1133,6 +1146,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
