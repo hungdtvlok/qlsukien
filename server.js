@@ -604,14 +604,14 @@ app.delete("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
 // ================= chat =================
 
 
-
+// tải tin nhắn lên
 app.post("/api/chat", async (req, res) => {
     try {
-        const { sender, message } = req.body;
-        if (!sender || !message) 
+        const { sender, message, eventId } = req.body;
+        if (!sender || !message || !eventId) 
             return res.status(400).json({ message: "Thiếu thông tin chat" });
 
-        const chat = new Chat({ sender, message });
+        const chat = new Chat({ sender, message, eventId });
         await chat.save();
 
         res.json({ message: "Đã gửi", chat });
@@ -619,14 +619,17 @@ app.post("/api/chat", async (req, res) => {
         res.status(500).json({ message: err.message });
     }
 });
-app.get("/api/chat", async (req, res) => {
+// lấy tin nhắn
+app.get("/api/chat/:eventId", async (req, res) => {
     try {
-        const chats = await Chat.find().sort({ createdAt: 1 }); // sắp xếp theo thời gian
+        const { eventId } = req.params;
+        const chats = await Chat.find({ eventId }).sort({ createdAt: 1 });
         res.json(chats);
     } catch (err) {
         res.status(500).json({ message: err.message });
     }
 });
+
 
 
 // ================== REGISTRATION SCHEMA ==================
@@ -1213,6 +1216,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
