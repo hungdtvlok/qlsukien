@@ -978,18 +978,29 @@ app.delete("/api/participants/:id", async (req, res) => {
 
 
 // ================== API THỐNG KÊ NGƯỜI THAM GIA + CHI TIÊU ==================
+
 app.get("/api/statistics", async (req, res) => {
   try {
-    // Lấy toàn bộ sự kiện
+    //  Đếm số người tham gia theo sự kiện (từ bảng Participant)
+    const participants = await Participant.aggregate([
+      { 
+        $group: { 
+          _id: "$eventName", 
+          count: { $sum: 1 } 
+        } 
+      }
+    ]);
+
+    //  Lấy danh sách tất cả sự kiện và tính tổng chi tiêu
     const events = await Event.find();
 
-    // Duyệt qua từng sự kiện để tính toán
+    //  Gộp dữ liệu lại (participants + expenses)
     const merged = events.map(ev => {
-      // Đếm số người tham gia (registeredCount)
-      const count = ev.registeredCount || 0;
+      const p = participants.find(x => x._id === ev.name);
+      const count = p ? p.count : 0;
 
-      // Tính tổng chi tiêu của sự kiện
-      const totalExpense = ev.expenses?.reduce((sum, exp) => sum + (exp.money || 0), 0);
+      // Tính tổng chi tiêu của sự kiện (dựa trên mảng expenses)
+      const totalExpense = ev.expenses?.reduce((sum, e) => sum + (e.money || 0), 0) || 0;
 
       return {
         eventName: ev.name,
@@ -998,9 +1009,21 @@ app.get("/api/statistics", async (req, res) => {
       };
     });
 
-    // Sắp xếp theo tên sự kiện
+    //  Thêm sự kiện có người tham gia nhưng chưa tồn tại trong Event (tránh bị sót)
+    participants.forEach(p => {
+      if (!merged.find(m => m.eventName === p._id)) {
+        merged.push({
+          eventName: p._id,
+          count: p.count,
+          totalExpense: 0
+        });
+      }
+    });
+
+    //  Sắp xếp theo tên sự kiện
     merged.sort((a, b) => a.eventName.localeCompare(b.eventName));
 
+    //  Trả kết quả về client
     res.json({
       message: "✅ Lấy thống kê thành công",
       statistics: merged
@@ -1156,6 +1179,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
