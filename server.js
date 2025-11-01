@@ -914,6 +914,77 @@ app.get("/api/statistics", async (req, res) => {
     }
 });
 
+
+
+
+
+
+
+// ================== API LẤY DANH SÁCH CHI TIÊU ==================
+app.get("/api/event/:eventId/expenses", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
+    res.json({ expenses: event.expenses });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error });
+  }
+});
+
+// ================== API THÊM CHI TIÊU ==================
+app.post("/api/event/:eventId/expenses", async (req, res) => {
+  try {
+    const { name, money } = req.body;
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
+
+    const newExpense = { name, money };
+    event.expenses.push(newExpense);
+    await event.save();
+
+    res.json({ message: "Thêm thành công", expense: newExpense });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi thêm chi tiêu", error });
+  }
+});
+
+// ================== API CẬP NHẬT CHI TIÊU ==================
+app.put("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
+  try {
+    const { name, money } = req.body;
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
+
+    const expense = event.expenses.id(req.params.expenseId);
+    if (!expense) return res.status(404).json({ message: "Không tìm thấy khoản chi tiêu!" });
+
+    expense.name = name;
+    expense.money = money;
+    await event.save();
+
+    res.json({ message: "Cập nhật thành công", expense });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi cập nhật chi tiêu", error });
+  }
+});
+
+// ================== API XÓA CHI TIÊU ==================
+app.delete("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
+
+    event.expenses.id(req.params.expenseId).deleteOne();
+    await event.save();
+
+    res.json({ message: "Xóa thành công" });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi xóa chi tiêu", error });
+  }
+});
+
+
+
 // ================== API QUÊN MẬT KHẨU ==================
 const sgMail = require("@sendgrid/mail");
 const crypto = require("crypto");
@@ -1055,6 +1126,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
