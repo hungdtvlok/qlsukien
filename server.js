@@ -62,11 +62,9 @@ const expenseSchema = new mongoose.Schema({
 });
 //chat
 const chatSchema = new mongoose.Schema({
-  eventId: { type: String, required: true },    // ID sự kiện
-  sender: { type: String, required: true },     // username người gửi
-  role: { type: String, default: "participant" }, // participant/admin
-  message: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now }
+  sender: { type: String, required: true }, // ai gửi
+    message: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now }
 });
 
 
@@ -603,6 +601,32 @@ app.delete("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
   }
 });
 
+// ================= chat =================
+
+
+
+app.post("/api/chat", async (req, res) => {
+    try {
+        const { sender, message } = req.body;
+        if (!sender || !message) 
+            return res.status(400).json({ message: "Thiếu thông tin chat" });
+
+        const chat = new Chat({ sender, message });
+        await chat.save();
+
+        res.json({ message: "Đã gửi", chat });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+app.get("/api/chat", async (req, res) => {
+    try {
+        const chats = await Chat.find().sort({ createdAt: 1 }); // sắp xếp theo thời gian
+        res.json(chats);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
 
 
 // ================== REGISTRATION SCHEMA ==================
@@ -1189,6 +1213,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
