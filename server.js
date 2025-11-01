@@ -47,12 +47,18 @@ const userSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now },
     sole: { type: String, default: "User" }
 });
-
+// công việc
 const taskSchema = new mongoose.Schema({
   name: { type: String, required: true },
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },
   performer: { type: String, default: "Chưa phân công" }
+});
+//chi tiêu
+const expenseSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  money: { type: Number, required: true },
+  createdAt: { type: Date, default: Date.now }
 });
 
 
@@ -510,6 +516,70 @@ app.delete("/api/event/:eventId/tasks/:taskId", async (req, res) => {
 });
 
 
+// ================== API LẤY DANH SÁCH CHI TIÊU ==================
+app.get("/api/event/:eventId/expenses", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
+    res.json({ expenses: event.expenses });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server", error });
+  }
+});
+
+// ================== API THÊM CHI TIÊU ==================
+app.post("/api/event/:eventId/expenses", async (req, res) => {
+  try {
+    const { name, money } = req.body;
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
+
+    const newExpense = { name, money };
+    event.expenses.push(newExpense);
+    await event.save();
+
+    res.json({ message: "Thêm thành công", expense: newExpense });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi thêm chi tiêu", error });
+  }
+});
+
+// ================== API CẬP NHẬT CHI TIÊU ==================
+app.put("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
+  try {
+    const { name, money } = req.body;
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
+
+    const expense = event.expenses.id(req.params.expenseId);
+    if (!expense) return res.status(404).json({ message: "Không tìm thấy khoản chi tiêu!" });
+
+    expense.name = name;
+    expense.money = money;
+    await event.save();
+
+    res.json({ message: "Cập nhật thành công", expense });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi cập nhật chi tiêu", error });
+  }
+});
+
+// ================== API XÓA CHI TIÊU ==================
+app.delete("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.eventId);
+    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
+
+    event.expenses.id(req.params.expenseId).deleteOne();
+    await event.save();
+
+    res.json({ message: "Xóa thành công" });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi xóa chi tiêu", error });
+  }
+});
+
+
 
 // ================== REGISTRATION SCHEMA ==================
 const registrationSchema = new mongoose.Schema({
@@ -920,70 +990,6 @@ app.get("/api/statistics", async (req, res) => {
 
 
 
-// ================== API LẤY DANH SÁCH CHI TIÊU ==================
-app.get("/api/event/:eventId/expenses", async (req, res) => {
-  try {
-    const event = await Event.findById(req.params.eventId);
-    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
-    res.json({ expenses: event.expenses });
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi server", error });
-  }
-});
-
-// ================== API THÊM CHI TIÊU ==================
-app.post("/api/event/:eventId/expenses", async (req, res) => {
-  try {
-    const { name, money } = req.body;
-    const event = await Event.findById(req.params.eventId);
-    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
-
-    const newExpense = { name, money };
-    event.expenses.push(newExpense);
-    await event.save();
-
-    res.json({ message: "Thêm thành công", expense: newExpense });
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi khi thêm chi tiêu", error });
-  }
-});
-
-// ================== API CẬP NHẬT CHI TIÊU ==================
-app.put("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
-  try {
-    const { name, money } = req.body;
-    const event = await Event.findById(req.params.eventId);
-    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
-
-    const expense = event.expenses.id(req.params.expenseId);
-    if (!expense) return res.status(404).json({ message: "Không tìm thấy khoản chi tiêu!" });
-
-    expense.name = name;
-    expense.money = money;
-    await event.save();
-
-    res.json({ message: "Cập nhật thành công", expense });
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi khi cập nhật chi tiêu", error });
-  }
-});
-
-// ================== API XÓA CHI TIÊU ==================
-app.delete("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
-  try {
-    const event = await Event.findById(req.params.eventId);
-    if (!event) return res.status(404).json({ message: "Không tìm thấy sự kiện!" });
-
-    event.expenses.id(req.params.expenseId).deleteOne();
-    await event.save();
-
-    res.json({ message: "Xóa thành công" });
-  } catch (error) {
-    res.status(500).json({ message: "Lỗi khi xóa chi tiêu", error });
-  }
-});
-
-
 
 // ================== API QUÊN MẬT KHẨU ==================
 const sgMail = require("@sendgrid/mail");
@@ -1126,6 +1132,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
