@@ -976,19 +976,30 @@ app.delete("/api/participants/:id", async (req, res) => {
 
 
 // ================== API THỐNG KÊ NGƯỜI THAM GIA ==================
+// ================== API THỐNG KÊ NGƯỜI THAM GIA + CHI TIÊU ==================
 app.get("/api/statistics", async (req, res) => {
   try {
-    // Lấy thống kê số người tham gia
+    // 🟩 1. Thống kê số người tham gia theo sự kiện
     const participants = await Participant.aggregate([
-      { $group: { _id: "$eventName", count: { $sum: 1 } } }
+      { 
+        $group: { 
+          _id: "$eventName", 
+          count: { $sum: 1 } 
+        } 
+      }
     ]);
 
-    // Lấy tổng chi tiêu của từng sự kiện
+    // 🟦 2. Thống kê tổng chi tiêu theo sự kiện
     const expenses = await ChiTieu.aggregate([
-      { $group: { _id: "$eventName", totalExpense: { $sum: "$money" } } }
+      { 
+        $group: { 
+          _id: "$eventName", 
+          totalExpense: { $sum: "$money" } 
+        } 
+      }
     ]);
 
-    // Gộp 2 mảng participants + expenses lại thành 1 kết quả
+    // 🟨 3. Gộp 2 kết quả dựa theo eventName
     const merged = participants.map(p => {
       const expense = expenses.find(e => e._id === p._id);
       return {
@@ -998,10 +1009,24 @@ app.get("/api/statistics", async (req, res) => {
       };
     });
 
-    // Trả về kết quả
+    // 🟧 4. Thêm các sự kiện có chi tiêu nhưng chưa có người tham gia
+    expenses.forEach(e => {
+      if (!merged.find(m => m.eventName === e._id)) {
+        merged.push({
+          eventName: e._id,
+          count: 0,
+          totalExpense: e.totalExpense
+        });
+      }
+    });
+
+    // 🟩 5. Sắp xếp theo tên sự kiện
+    merged.sort((a, b) => a.eventName.localeCompare(b.eventName));
+
+    // 🟦 6. Trả kết quả về client
     res.json({
       message: "✅ Lấy thống kê thành công",
-      statistics: merged.sort((a, b) => a.eventName.localeCompare(b.eventName))
+      statistics: merged
     });
 
   } catch (err) {
@@ -1009,6 +1034,7 @@ app.get("/api/statistics", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 
 // ================== API QUÊN MẬT KHẨU ==================
@@ -1152,6 +1178,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
