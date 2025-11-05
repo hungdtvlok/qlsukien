@@ -1187,14 +1187,15 @@ Ban tổ chức.`,
   };
 
   try {
+    console.log(`📤 Đang gửi mail tới: ${reg.userId.email}`);
     await sgMail.send(msg);
-    console.log(`✅ Gửi email đến ${reg.userId.email}`);
+    console.log(`✅ Gửi email thành công: ${reg.userId.email}`);
     reg.emailSent = true;
     await reg.save();
   } catch (err) {
-    console.error("❌ Gửi email lỗi:", err);
-    if (err.response && err.response.body) {
-      console.error("SendGrid response:", err.response.body);
+    console.error("❌ Lỗi gửi email:", err.message);
+    if (err.response?.body) {
+      console.error("📩 SendGrid trả về lỗi:", JSON.stringify(err.response.body, null, 2));
     }
   }
 }
@@ -1245,6 +1246,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
