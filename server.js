@@ -1199,27 +1199,29 @@ Ban tổ chức.`,
 
 // ================== Route gửi nhắc nhở ==================
 app.post("/api/send-reminder", async (req, res) => {
-    const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
-    const twoHoursLaterVN = nowVN.plus({ hours: 2 });
+  const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
+  const twoHoursLaterVN = nowVN.plus({ hours: 2 });
 
-    try {
-        const registrations = await Registration.find();
+  try {
+    const registrations = await Registration.find()
+      .populate("userId", "email fullName")
+      .populate("eventId", "name startTime location");
 
-        for (const reg of registrations) {
-            if (!reg.eventId || !reg.userId || reg.emailSent) continue;
+    for (const reg of registrations) {
+      if (!reg.eventId || !reg.userId || reg.emailSent) continue;
 
-            const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
+      const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
 
-            if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN) {
-                await sendEmail(reg, startTimeVN);
-            }
-        }
-
-        res.json({ message: "Nhắc nhở email đã gửi (nếu có sự kiện sắp diễn ra)" });
-    } catch (err) {
-        console.error("❌ Lỗi gửi nhắc nhở:", err);
-        res.status(500).json({ message: "Lỗi server" });
+      if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN) {
+        await sendEmail(reg, startTimeVN);
+      }
     }
+
+    res.json({ message: "Nhắc nhở email đã gửi (nếu có sự kiện sắp diễn ra)" });
+  } catch (err) {
+    console.error("❌ Lỗi gửi nhắc nhở:", err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
 });
 
 
@@ -1232,6 +1234,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
