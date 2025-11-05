@@ -1151,26 +1151,39 @@ app.post("/api/quenmk", async (req, res) => {
 
 
 
-// ================== Gửi email nhắc nhở trước 2h bằng SendGrid ==================
-const cron = require("node-cron");
 
+/*
+================== Gửi Gmail thật trước 2 h==================
+
+const cron = require("node-cron");
+const nodemailer = require("nodemailer");
 const { DateTime } = require("luxon");
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-
-// ================== Route kiểm tra server / ping ==================
-app.get("/api/ping", (req, res) => {
-    res.json({ message: "Server alive" });
+// ===== Cấu hình Gmail SMTP =====
+const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 465,
+    secure: true,
+    auth: {
+        user: "githich462@gmail.com",
+        pass: "aqzzbtyfarsgaesd", // App Password
+    },
 });
 
-// ======== Hàm gửi email ==========
+transporter.verify((error, success) => {
+    if (error) console.error("❌ Lỗi cấu hình Gmail:", error);
+    else console.log("✅ Gmail SMTP sẵn sàng để gửi email!");
+});
+
+// ===== Hàm gửi email =====
 async function sendEmail(reg, startTimeVN) {
-  const formattedTime = startTimeVN.toFormat("dd/MM/yyyy 'lúc' HH:mm");
-  const msg = {
-    to: reg.userId.email,
-    from: "githich462@gmail.com",
-    subject: `📢 Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
-    text: `Xin chào ${reg.userId.fullName},
+    const formattedTime = startTimeVN.toFormat("dd/MM/yyyy 'lúc' HH:mm");
+
+    const mailOptions = {
+        from: '"Ban tổ chức sự kiện" <githich462@gmail.com>',
+        to: reg.userId.email,
+        subject: `📢 Nhắc nhở: ${reg.eventId.name} sắp bắt đầu!`,
+        text: `Xin chào ${reg.userId.fullName},
 
 Sự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.
 Địa điểm: ${reg.eventId.location || "chưa cập nhật"}.
@@ -1178,65 +1191,26 @@ Sự kiện "${reg.eventId.name}" sẽ bắt đầu lúc ${formattedTime}.
 Hẹn gặp bạn tại sự kiện!
 
 Trân trọng,
-Ban tổ chức.`,
-    html: `<p>Xin chào <b>${reg.userId.fullName}</b>,</p>
-           <p>Sự kiện "<b>${reg.eventId.name}</b>" sẽ bắt đầu lúc <b>${formattedTime}</b>.</p>
-           <p>Địa điểm: ${reg.eventId.location || "chưa cập nhật"}.</p>
-           <p>Hẹn gặp bạn tại sự kiện!</p>
-           <p>Trân trọng,<br/>Ban tổ chức.</p>`,
-  };
+Ban tổ chức.`
+    };
 
-  try {
-    console.log(`📤 Đang gửi mail tới: ${reg.userId.email}`);
-    await sgMail.send(msg);
-    console.log(`✅ Gửi email thành công: ${reg.userId.email}`);
-    reg.emailSent = true;
-    await reg.save();
-  } catch (err) {
-    console.error("❌ Lỗi gửi email:", err.message);
-    if (err.response?.body) {
-      console.error("📩 SendGrid trả về lỗi:", JSON.stringify(err.response.body, null, 2));
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Đã gửi email đến ${reg.userId.email}`);
+        reg.emailSent = true;
+        await reg.save();
+    } catch (err) {
+        console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, err);
     }
-  }
 }
 
-// ======== Hàm kiểm tra sự kiện sắp diễn ra ==========
-async function checkAndSendReminders() {
-  const nowVN = DateTime.now().setZone("Asia/Ho_Chi_Minh");
-  const twoHoursLaterVN = nowVN.plus({ hours: 2 });
-
-  const registrations = await Registration.find()
-    .populate("userId", "email fullName")
-    .populate("eventId", "name startTime location");
-
-  for (const reg of registrations) {
-    if (!reg.eventId || !reg.userId || reg.emailSent) continue;
-
-    const startTimeVN = DateTime.fromJSDate(reg.eventId.startTime).setZone("Asia/Ho_Chi_Minh");
-
-    // Nếu sự kiện sắp diễn ra trong 2 giờ tới
-    if (startTimeVN > nowVN && startTimeVN <= twoHoursLaterVN) {
-      await sendEmail(reg, startTimeVN);
-    }
-  }
-}
-
-// ======== Route test thủ công ==========
-app.post("/api/send-reminder", async (req, res) => {
-  try {
-    await checkAndSendReminders();
-    res.json({ message: "✅ Đã kiểm tra và gửi mail nhắc nhở (nếu có sự kiện trong 2h tới)" });
-  } catch (err) {
-    console.error("❌ Lỗi khi gửi nhắc nhở:", err);
-    res.status(500).json({ message: "Lỗi server" });
-  }
+// ===== Cron job: kiểm tra mỗi phút =====
+cron.schedule("* * * * *", async () => {
+    console.log("🔍 Kiểm tra sự kiện sắp bắt đầu...");
+    ...
 });
+*/
 
-// ======== Cron job chạy mỗi 10 phút ==========
-cron.schedule("*/10 * * * *", async () => {
-  console.log("🕑 Kiểm tra sự kiện sắp diễn ra (mỗi 10 phút)...");
-  await checkAndSendReminders();
-});
 
 
 
@@ -1246,6 +1220,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
