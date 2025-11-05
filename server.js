@@ -1193,7 +1193,11 @@ Ban tổ chức.`,
         reg.emailSent = true;
         await reg.save();
     } catch (err) {
-        console.error(`❌ Gửi email lỗi cho ${reg.userId.email}:`, err.response ? err.response.body : err);
+        console.error("❌ Gửi email lỗi:", err);
+if (err.response && err.response.body) {
+    console.error("SendGrid response:", err.response.body);
+}
+
     }
 }
 
@@ -1234,6 +1238,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
