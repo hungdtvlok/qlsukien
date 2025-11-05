@@ -1228,6 +1228,26 @@ app.post("/api/send-reminder", async (req, res) => {
   }
 });
 
+// ================== Route test gửi email ==================
+app.get("/api/test-email", async (req, res) => {
+  try {
+    await sgMail.send({
+      to: "githich462@gmail.com", // 📩 Gmail của bạn
+      from: "githich462@gmail.com", // ⚠️ Phải là email đã verify trong SendGrid
+      subject: "🧪 Test gửi mail từ Render bằng SendGrid",
+      text: "Nếu bạn nhận được email này, tức là hệ thống gửi email đã hoạt động!",
+      html: "<p>✅ Thành công! Hệ thống gửi mail trên Render hoạt động bình thường.</p>",
+    });
+
+    res.json({ message: "✅ Đã gửi test email thành công!" });
+  } catch (err) {
+    console.error("❌ Lỗi test gửi mail:", err);
+    if (err.response && err.response.body) {
+      console.error("SendGrid response:", err.response.body);
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 
@@ -1238,6 +1258,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
