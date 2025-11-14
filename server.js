@@ -646,7 +646,33 @@ app.get("/api/chat/:eventId", async (req, res) => {
     }
 });
 
+const path = require("path");
 
+// Nơi lưu ảnh
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, "uploads/chat"); // thư mục uploads/chat/
+    },
+    filename: (req, file, cb) => {
+        cb(null, Date.now() + path.extname(file.originalname)); 
+    }
+});
+
+const upload = multer({ storage: storage });
+
+// API upload ảnh
+app.post("/api/chat/upload", upload.single("image"), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ message: "Không có ảnh được tải lên" });
+    }
+
+    const imageUrl = `/uploads/chat/${req.file.filename}`;
+    
+    res.json({
+        message: "Upload thành công",
+        imageUrl: imageUrl
+    });
+});
 
 // ================== REGISTRATION SCHEMA ==================
 const registrationSchema = new mongoose.Schema({
@@ -1293,6 +1319,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
