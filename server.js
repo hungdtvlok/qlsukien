@@ -605,60 +605,21 @@ app.delete("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
 
 // ================= chat =================
 
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
 
 
-app.use(express.json());
-
-// Tạo thư mục uploads/chat nếu chưa có
-const uploadDir = path.join(__dirname, "uploads/chat");
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Phục vụ file tĩnh
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-// Cấu hình Multer
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
-    filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
-});
-const upload = multer({ storage });
-
-// ======================== API upload ảnh ========================
-app.post("/api/chat/upload", upload.single("image"), (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ message: "Không có ảnh được tải lên" });
-    }
-
-    // Trả về URL đầy đủ để client tải được
-    const imageUrl = `${req.protocol}://${req.get("host")}/uploads/chat/${req.file.filename}`;
-
-    res.json({
-        message: "Upload thành công",
-        imageUrl: imageUrl
-    });
-});
-
-// ======================== API chat ========================
-// Gửi tin nhắn
+// tải tin nhắn lên
 app.post("/api/chat", async (req, res) => {
     try {
-        const { sender, message, username, eventId, imageUrl } = req.body;
-        if (!sender || (!message && !imageUrl) || !username || !eventId) {
+        const { sender, message, username, eventId } = req.body; // vẫn message
+        if (!sender || !message || !username || !eventId) {
             return res.status(400).json({ message: "Thiếu thông tin chat" });
         }
-
         const chat = new Chat({ 
             sender, 
-            message: message || "",   
+            message,   
             username, 
             eventId, 
-            imageUrl: imageUrl || null,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString() 
         });
         await chat.save();
         res.json({ message: "Đã gửi", chat });
@@ -667,17 +628,22 @@ app.post("/api/chat", async (req, res) => {
     }
 });
 
-// Lấy tin nhắn theo eventId
+
+// lấy tin nhắn
 app.get("/api/chat/:eventId", async (req, res) => {
     try {
         const { eventId } = req.params;
+        console.log("LẤY CHAT CHO EVENTID:", eventId);
+
         const chats = await Chat.find({ eventId }).sort({ createdAt: 1 });
+
+        console.log("CHAT TÌM ĐƯỢC:", chats.length);
         res.json(chats);
     } catch (err) {
+        console.error("LỖI LẤY CHAT:", err.message, err);
         res.status(500).json({ message: err.message });
     }
 });
-
 
 // ================== REGISTRATION SCHEMA ==================
 const registrationSchema = new mongoose.Schema({
@@ -1324,6 +1290,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
