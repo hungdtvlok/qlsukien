@@ -604,7 +604,7 @@ app.delete("/api/event/:eventId/expenses/:expenseId", async (req, res) => {
 });
 
 // ================= chat =================
-const express = require("express");
+
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
@@ -1324,6 +1324,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
 
 
 
